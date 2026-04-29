@@ -265,12 +265,20 @@
   /* Hero visual: floating phone mock */
   .hero-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 460px);
-    gap: 56px;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 64px;
     align-items: center;
   }
-  @media (max-width: 960px) {
+  /* Right-padding on the headline column so the phone never visually
+     bleeds into the text even on viewports where the grid is generous. */
+  .hero-grid > :first-child {
+    padding-right: 24px;
+  }
+  /* Stack vertically on tablet/laptop too — phone has high visual weight,
+     gets its own row instead of fighting the headline for space. */
+  @media (max-width: 1100px) {
     .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+    .hero-grid > :first-child { padding-right: 0; }
   }
   .phone-mock {
     position: relative;
@@ -596,6 +604,53 @@
     gap: 18px;
     max-width: 880px;
     margin: 0 auto;
+  }
+  /* Live demo section — embedded recorder with ambient amber glow */
+  .demo-section { position: relative; isolation: isolate; }
+  .demo-frame-wrap {
+    position: relative;
+    max-width: 760px;
+    margin: 0 auto;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.04) inset,
+      0 24px 60px -16px rgba(0,0,0,0.6);
+  }
+  /* Amber glow halo behind the iframe to make it feel embedded, not foreign */
+  .demo-frame-wrap::before {
+    content: "";
+    position: absolute;
+    inset: -60px;
+    z-index: -1;
+    background: radial-gradient(60% 60% at 50% 50%, rgba(245,166,35,0.18), transparent 70%);
+    filter: blur(40px);
+    pointer-events: none;
+  }
+  .demo-frame {
+    display: block;
+    width: 100%;
+    height: 760px;
+    border: 0;
+    background: var(--bg);
+  }
+  @media (max-width: 720px) {
+    .demo-frame { height: 680px; }
+  }
+  .demo-cta-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-top: 36px;
+  }
+  .demo-cta-text {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 14.5px;
   }
   /* Single-tier launch layout: one card, centered, slim */
   .pricing.pricing-single {
@@ -1069,7 +1124,7 @@
     .nav { padding: 14px 24px; }
     .nav-link { font-size: 13px; padding: 7px 11px; }
     .hero { padding: 80px 0 88px; }
-    .hero-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 380px); gap: 40px; }
+    /* hero-grid is already stacked at 1100px (defined above); phone shrinks */
     .features { grid-template-columns: repeat(2, 1fr); }
     .testimonials { grid-template-columns: repeat(2, 1fr); }
     .phone-mock { width: 280px; height: 560px; }
@@ -1251,6 +1306,35 @@
   </div>
 </section>
 
+<!-- ============== LIVE DEMO ============== -->
+<section id="demo" class="demo-section">
+  <div class="wrap-narrow">
+    <div data-anim style="text-align:center;">
+      <div class="eyebrow section-label" style="justify-content:center; display:inline-flex;">
+        <span class="rec-dot"></span>
+        TRY IT NOW · LIVE DEMO
+      </div>
+      <h2 class="section-h" style="margin-left:auto; margin-right:auto;">Want to <span class="accent">try it?</span></h2>
+      <p class="section-sub" style="margin: 0 auto 40px;">Three quick questions. Hit record. See exactly what your customers see when they get the link. (Demo submissions auto-clear daily.)</p>
+    </div>
+    <div class="demo-frame-wrap" data-anim data-anim-delay="1">
+      <iframe
+        src="/r/demo"
+        title="Stokereel live demo"
+        allow="camera; microphone; autoplay"
+        loading="lazy"
+        class="demo-frame"></iframe>
+    </div>
+    <div class="demo-cta-row" data-anim data-anim-delay="2">
+      <p class="demo-cta-text">Like what you see?</p>
+      <a href="#pricing" class="btn btn-primary">
+        Get Stokereel — $147
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
 <!-- ============== FEATURES ============== -->
 <section id="features">
   <div class="wrap">
@@ -1393,7 +1477,6 @@
           <li>All future v1.x updates included</li>
         </ul>
         <a href="https://buy.stripe.com/fZu9ATbbW0LE2wZc8GfnO00" class="tier-btn">Get Stokereel — $147 →</a>
-        <p class="tier-fineprint">30-day money-back guarantee. Refund if you can't deploy.</p>
       </div>
     </div>
   </div>
@@ -1499,7 +1582,6 @@
         <a href="#features">Features</a>
         <a href="#pricing">Pricing</a>
         <a href="/config">Login</a>
-        <a href="mailto:michaelrochin@gmail.com?subject=Stokereel%20refund%20request">Refunds &amp; Terms</a>
         <a href="mailto:michaelrochin@gmail.com?subject=Stokereel%20question">Contact</a>
       </div>
       <div class="footer-copy">© 2026 STOKEREEL · SELF-HOSTED ON CLOUDFLARE</div>

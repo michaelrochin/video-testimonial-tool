@@ -32,7 +32,7 @@ import LANDING_HTML from "./landing.html";
 // this against UPSTREAM_VERSION_URL to detect when an update is available.
 // Use semantic versioning (MAJOR.MINOR.PATCH).
 // --------------------------------------------------------------
-const STOKEREEL_VERSION = "1.4.2";
+const STOKEREEL_VERSION = "1.4.3";
 const UPSTREAM_VERSION_URL = "https://testimonials.michaelrochin.workers.dev/version";
 
 // --------------------------------------------------------------
@@ -205,6 +205,12 @@ export default {
       const recorderMatch = url.pathname.match(/^\/r\/([^/]+)\/([^/]+)\/?$/);
       if (recorderMatch && request.method === "GET") {
         return serveHostedRecorder(url.origin, recorderMatch[1], recorderMatch[2]);
+      }
+      // Shorthand: /r/<client> -> /r/<client>/general
+      // Lets us share short URLs like /r/demo for the live landing-page demo.
+      const recorderShort = url.pathname.match(/^\/r\/([^/]+)\/?$/);
+      if (recorderShort && request.method === "GET") {
+        return serveHostedRecorder(url.origin, recorderShort[1], "general");
       }
 
       return withCors(new Response("Not found", { status: 404 }));
