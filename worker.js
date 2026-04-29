@@ -86,7 +86,7 @@ export default {
         return new Response(LANDING_HTML, { headers: { "Content-Type": "text/html; charset=utf-8" } });
       }
       if (url.pathname === "/welcome" && request.method === "GET") {
-        return new Response(WELCOME_HTML, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+        return await handleWelcomeAccess(request, env, url);
       }
       if (url.pathname === "/setup" && request.method === "GET") {
         return new Response(SETUP_HTML, { headers: { "Content-Type": "text/html; charset=utf-8" } });
@@ -896,6 +896,49 @@ async function handleAdminExport(request, env) {
       "Content-Disposition": `attachment; filename="testimonials-${new Date().toISOString().slice(0,10)}.csv"`
     }
   });
+}
+
+// --------------------------------------------------------------
+// /welcome — gated so only paid customers (or admin with token) can see it
+// --------------------------------------------------------------
+async function handleWelcomeAccess(request, env, url) {
+  const sessionId = url.searchParams.get("session_id");
+  const token = url.searchParams.get("token");
+
+  // Owner backdoor for testing/QA — set WELCOME_TOKEN secret to a long random string
+  const welcomeToken = await getCred(env, "WELCOME_TOKEN");
+  if (welcomeToken && token && token === welcomeToken) {
+    return new Response(WELCOME_HTML, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+  }
+
+  // Stripe session verification — Stripe redirects with ?session_id={CHECKOUT_SESSION_ID}
+  if (sessionId && /^cs_(test_|live_)?[A-Za-z0-9_-]{10,}$/.test(sessionId)) {
+    const stripeKey = await getCred(env, "STRIPE_SECRET_KEY");
+    if (stripeKey) {
+      try {
+        const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions/" + encodeURIComponent(sessionId), {
+          headers: { "Authorization": "Bearer " + stripeKey }
+        });
+        if (stripeRes.ok) {
+          const session = await stripeRes.json();
+          // Accept any session that's been paid (one-time or subscription)
+          if (session && (session.payment_status === "paid" || session.payment_status === "no_payment_required")) {
+            return new Response(WELCOME_HTML, {
+              headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                // Don't let it be cached or shared via Referer
+                "Cache-Control": "private, no-store",
+                "Referrer-Policy": "no-referrer"
+              }
+            });
+          }
+        }
+      } catch {}
+    }
+  }
+
+  // Not verified — bounce to landing
+  return Response.redirect(url.origin + "/", 302);
 }
 
 // --------------------------------------------------------------
