@@ -159,6 +159,14 @@ export default {
       if (url.pathname === "/admin/custom-domain/delete" && request.method === "POST") {
         return withCors(await handleCustomDomainDelete(request, env));
       }
+      if (url.pathname === "/admin/shortlink/create" && request.method === "POST") {
+        return withCors(await handleShortlinkCreate(request, env));
+      }
+      // /s/<code> — short link → serves the mapped recorder
+      const shortMatch = url.pathname.match(/^\/s\/([A-Za-z0-9]{4,12})\/?$/);
+      if (shortMatch && request.method === "GET") {
+        return await serveShortlink(env, url.origin, shortMatch[1]);
+      }
       const logoMatch = url.pathname.match(/^\/logo\/([^/]+)$/);
       if (logoMatch && request.method === "GET") {
         return await serveLogo(env, logoMatch[1]);
@@ -1089,6 +1097,109 @@ async function handleCustomDomainDelete(request, env) {
 }
 
 // --------------------------------------------------------------
+// Short links — /s/<code> redirects to /r/<client>/<funnel>
+// Creates compact share URLs like stokereel.workers.dev/s/Ab3xYz
+// --------------------------------------------------------------
+function generateShortCode(length) {
+  // No 0/O, 1/l, etc. for less ambiguity
+  const chars = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const rand = crypto.getRandomValues(new Uint8Array(length || 6));
+  let code = "";
+  for (let i = 0; i < rand.length; i++) code += chars[rand[i] % chars.length];
+  return code;
+}
+
+async function serveShortlink(env, origin, code) {
+  const r = await env.BUCKET.get("shortlinks/" + code + ".json");
+  if (!r) return new Response("Short link not found", { status: 404 });
+  let data;
+  try { data = JSON.parse(await r.text()); } catch { return new Response("Short link corrupted", { status: 500 }); }
+  if (!data.client || !data.course) return new Response("Short link malformed", { status: 500 });
+  return serveHostedRecorder(origin, data.client, data.course);
+}
+
+async function handleShortlinkCreate(request, env) {
+  const { password, client, course, preferredHost } = await request.json().catch(() => ({}));
+  const adminPw = await getCred(env, "ADMIN_PASSWORD");
+  if (!adminPw || password !== adminPw) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401, headers: { "Content-Type": "application/json" }
+    });
+  }
+  const c = sanitizeSlug(client);
+  const co = sanitizeSlug(course);
+  const brandHost = await getCred(env, "BRAND_HOST");
+  if (!c || !co || c === "general" && !client) {
+    return new Response(JSON.stringify({ error: "client_and_course_required" }), {
+      status: 400, headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // Pick the host the short URL will live on.
+  // 1. Customer's custom domain (per-client) if passed
+  // 2. BRAND_HOST env (Michael's branded domain like stokereel.com)
+  // 3. Falls back to current request origin (workers.dev) — ugly but functional
+  function pickHost() {
+    const reqOrigin = new URL(request.url).origin;
+    let h = (preferredHost || "").trim();
+    if (h.indexOf("https://") === 0) h = h.slice(8);
+    else if (h.indexOf("http://") === 0) h = h.slice(7);
+    while (h.endsWith("/")) h = h.slice(0, -1);
+    if (h && isValidHostname(h)) return "https://" + h;
+    if (brandHost) {
+      let b = String(brandHost).trim();
+      if (b.indexOf("https://") === 0) b = b.slice(8);
+      else if (b.indexOf("http://") === 0) b = b.slice(7);
+      while (b.endsWith("/")) b = b.slice(0, -1);
+      if (b && isValidHostname(b)) return "https://" + b;
+    }
+    return reqOrigin;
+  }
+
+  // Re-use existing short link for this funnel if one already exists
+  const reverseKey = "shortlinks-by-funnel/" + c + "__" + co + ".json";
+  const existing = await env.BUCKET.get(reverseKey);
+  if (existing) {
+    try {
+      const reverseData = JSON.parse(await existing.text());
+      if (reverseData.code) {
+        const fullUrl = pickHost() + "/s/" + reverseData.code;
+        return new Response(JSON.stringify({ code: reverseData.code, client: c, course: co, full_url: fullUrl, reused: true }), {
+          status: 200, headers: { "Content-Type": "application/json" }
+        });
+      }
+    } catch {}
+  }
+
+  // Generate a new collision-free code
+  let code = "";
+  for (let attempt = 0; attempt < 8; attempt++) {
+    code = generateShortCode(6);
+    const taken = await env.BUCKET.get("shortlinks/" + code + ".json");
+    if (!taken) break;
+    code = "";
+  }
+  if (!code) {
+    return new Response(JSON.stringify({ error: "could_not_generate" }), {
+      status: 500, headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const payload = { client: c, course: co, created_at: new Date().toISOString() };
+  await env.BUCKET.put("shortlinks/" + code + ".json", JSON.stringify(payload, null, 2), {
+    httpMetadata: { contentType: "application/json" }
+  });
+  await env.BUCKET.put(reverseKey, JSON.stringify({ code }, null, 2), {
+    httpMetadata: { contentType: "application/json" }
+  });
+
+  const fullUrl = pickHost() + "/s/" + code;
+  return new Response(JSON.stringify({ code, client: c, course: co, full_url: fullUrl, reused: false }), {
+    status: 200, headers: { "Content-Type": "application/json" }
+  });
+}
+
+// --------------------------------------------------------------
 // /setup/save — first-run wizard saves credentials to R2
 // --------------------------------------------------------------
 async function handleSetupSave(request, env) {
@@ -1661,12 +1772,21 @@ const CONFIG_HTML = `<!DOCTYPE html>
           <button onclick="copyShare('shareIframe', this)" class="secondary" style="white-space:nowrap;">Copy</button>
         </div>
       </div>
-      <div>
+      <div style="margin-bottom:14px;">
         <label style="display:block; font-size:12px; color:#1a1a1a; margin-bottom:4px; font-weight:600;">Option 2 — Direct shareable URL</label>
-        <p style="font-size: 12px; color: #6b6b6b; margin: 0 0 6px;">Send this link directly via email / SMS / DM. By default this uses the worker URL; if you've set a custom domain in Settings, this updates automatically.</p>
+        <p style="font-size: 12px; color: #6b6b6b; margin: 0 0 6px;">Send this link directly via email / SMS / DM. Updates to use your custom domain automatically when one is set.</p>
         <div style="display:flex; gap:6px;">
           <input id="shareUrl" type="text" readonly style="flex:1; padding:8px 10px; border:1px solid #e5e0d6; border-radius:4px; font-family:monospace; font-size:12px; background:white;">
           <button onclick="copyShare('shareUrl', this)" class="secondary" style="white-space:nowrap;">Copy</button>
+        </div>
+      </div>
+      <div>
+        <label style="display:block; font-size:12px; color:#1a1a1a; margin-bottom:4px; font-weight:600;">Option 3 — Short link (compact, easy to remember)</label>
+        <p style="font-size: 12px; color: #6b6b6b; margin: 0 0 6px;">Tiny URL that redirects to this funnel. Great for printed materials, SMS, or anywhere character count matters.</p>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <input id="shareShort" type="text" readonly placeholder="Click 'Generate' to create a short link" style="flex:1; padding:8px 10px; border:1px solid #e5e0d6; border-radius:4px; font-family:monospace; font-size:12px; background:white;">
+          <button onclick="generateShortLink()" id="shortLinkBtn" class="secondary" style="white-space:nowrap;">Generate</button>
+          <button onclick="copyShare('shareShort', this)" class="secondary" style="white-space:nowrap; display:none;" id="shortLinkCopyBtn">Copy</button>
         </div>
       </div>
     </div>
@@ -2639,6 +2759,41 @@ function updateShareBox() {
     '<iframe src="' + url + '" allow="camera; microphone" style="width:100%;min-height:90vh;border:0;display:block;"></iframe>';
   document.getElementById("shareLabel").textContent = client + " / " + course;
   box.style.display = "block";
+}
+
+async function generateShortLink() {
+  const pw = localStorage.getItem(STORAGE_KEY);
+  const clientRaw = document.getElementById("clientName").value;
+  const courseRaw = document.getElementById("courseName").value;
+  const client = clientRaw && clientRaw !== NEW_OPTION ? clientRaw : "";
+  const course = courseRaw && courseRaw !== NEW_OPTION ? courseRaw : "";
+  if (!client || !course) { toast("Pick a client AND funnel first."); return; }
+  const btn = document.getElementById("shortLinkBtn");
+  const input = document.getElementById("shareShort");
+  const copyBtn = document.getElementById("shortLinkCopyBtn");
+  // Pass the per-client custom domain if it's set; the worker also has BRAND_HOST as a fallback
+  const domainInput = document.querySelector('input[data-key="customDomain"]');
+  const preferredHost = (domainInput && domainInput.value || "").trim();
+  btn.disabled = true;
+  btn.textContent = "Generating…";
+  try {
+    const res = await fetch("/admin/shortlink/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw, client, course, preferredHost })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || ("Failed: " + res.status));
+    input.value = data.full_url;
+    copyBtn.style.display = "inline-flex";
+    btn.textContent = "Regenerate";
+    btn.disabled = false;
+    toast(data.reused ? "Existing short link reused." : "Short link created!");
+  } catch (err) {
+    btn.textContent = "Generate";
+    btn.disabled = false;
+    toast("Error: " + err.message);
+  }
 }
 
 async function copyShare(inputId, btn) {
