@@ -32,7 +32,7 @@ import LANDING_HTML from "./landing.html";
 // this against UPSTREAM_VERSION_URL to detect when an update is available.
 // Use semantic versioning (MAJOR.MINOR.PATCH).
 // --------------------------------------------------------------
-const STOKEREEL_VERSION = "1.4.6";
+const STOKEREEL_VERSION = "1.4.7";
 const UPSTREAM_VERSION_URL = "https://testimonials.michaelrochin.workers.dev/version";
 
 // --------------------------------------------------------------
@@ -3410,6 +3410,44 @@ const CONFIG_HTML = `<!DOCTYPE html>
     background: var(--d-warm);
   }
   .share-howto ul li strong { color: var(--d-ink) !important; }
+  /* Advanced collapse — wraps the iframe-based embed options to de-emphasize them */
+  .share-advanced {
+    margin-top: 8px;
+    border: 1px dashed var(--d-border-strong) !important;
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.015);
+  }
+  .share-advanced summary {
+    cursor: pointer;
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--d-muted) !important;
+    user-select: none;
+  }
+  .share-advanced summary::-webkit-details-marker { display: none; }
+  .share-advanced summary::before {
+    content: "+";
+    width: 18px; height: 18px;
+    border: 1px solid var(--d-border-strong);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    font-weight: 700; font-size: 12px; line-height: 1;
+    color: var(--d-ink-2);
+    transition: transform 0.18s;
+  }
+  .share-advanced[open] summary::before { content: "−"; }
+  .share-advanced summary:hover { color: var(--d-ink) !important; }
+  .share-advanced[open] { padding-bottom: 4px; }
+  .share-advanced[open] > .share-card:first-of-type { margin-top: 14px; }
   .email-subject-line, .email-body-line {
     background: var(--d-bg-3) !important;
     border-color: var(--d-border) !important;
@@ -4421,8 +4459,8 @@ const CONFIG_HTML = `<!DOCTYPE html>
 
       <div class="section">
         <h2>Pretty share URL (optional)</h2>
-        <p class="help-text" style="margin: 0 0 12px;">Most people don't need this. The <strong>iframe embed</strong> on the Branding tab already shows your own domain naturally — paste into any page on your site, no DNS work needed.</p>
-        <p class="help-text" style="margin: 0 0 14px;">Only set this up if you want the <em>standalone shareable link</em> on your domain. Works with any DNS provider (GoDaddy, Namecheap, your existing setup) — keep your DNS where it is and just add ONE CNAME record.</p>
+        <p class="help-text" style="margin: 0 0 12px;">Want a clean, branded URL like <code>testimonials.yoursite.com</code> instead of the default <code>testimonials.michaelrochin.workers.dev</code>? Add your custom domain here. Takes ~5 minutes (one CNAME record at your DNS provider). Cloudflare auto-issues SSL.</p>
+        <p class="help-text" style="margin: 0 0 14px;">Don't want to mess with DNS? Use the <strong>Branded redirect</strong> option on the Share tab instead — paste a single line of code on a page on your site (e.g. <code>yoursite.com/testimonials</code>) and visitors get redirected to your full-screen recorder. Takes 30 seconds, no DNS work.</p>
 
         <div id="customDomainCard" style="background:white; border:1px solid #e5e0d6; border-radius:8px; padding:16px;">
           <!-- Populated by JS based on current registration state -->
@@ -4668,22 +4706,42 @@ P.S. If you started recording one and got self-conscious and closed the tab — 
             </details>
           </div>
 
-          <!-- Option 3: Simple one-line embed -->
+          <!-- Option 3: Quick share text — pre-written outreach -->
           <div class="share-card">
             <div class="share-card-head">
-              <strong>Option 3 · Simple embed</strong>
+              <strong>Option 3 · Quick share text</strong>
+              <span class="share-tag">For email, SMS, DMs</span>
             </div>
-            <p class="share-desc">One-line iframe. Works on blank pages, landing-page templates, custom HTML pages. If your site has a header/footer that bleeds through, use Option 2 (redirect) or Option 4 (aggressive embed) instead.</p>
+            <p class="share-desc">Pre-written one-paragraph outreach message. Replace <code>[NAME]</code> with the customer's first name, paste, send. The recording URL is already filled in.</p>
+            <div class="share-input-row">
+              <textarea id="shareQuickText" readonly rows="5" style="flex:1; resize:vertical; font-family: 'DM Sans', -apple-system, sans-serif; font-size: 13.5px; line-height: 1.55; padding: 12px 14px; border: 1px solid #e5e0d6; border-radius: 8px; background: #faf7f2;"></textarea>
+              <button onclick="copyShare('shareQuickText', this)" class="secondary" style="align-self:flex-start;">Copy</button>
+            </div>
+          </div>
+
+          <!-- Advanced (collapsed): iframe-based embeds for blank-template pages -->
+          <details class="share-advanced">
+            <summary>
+              <span>Advanced · Iframe embeds</span>
+              <span class="share-tag">For developers / blank pages</span>
+            </summary>
+
+          <!-- Option 4: Simple one-line embed -->
+          <div class="share-card">
+            <div class="share-card-head">
+              <strong>Option 4 · Simple embed</strong>
+            </div>
+            <p class="share-desc">One-line iframe. Works on blank pages, landing-page templates, custom HTML pages. If your site has a header/footer that bleeds through, use Option 2 (redirect) or Option 5 (aggressive embed) instead.</p>
             <div class="share-input-row">
               <input id="shareIframe" type="text" readonly>
               <button onclick="copyShare('shareIframe', this)" class="secondary">Copy</button>
             </div>
           </div>
 
-          <!-- Option 4: Aggressive full-page-takeover embed -->
+          <!-- Option 5: Aggressive full-page-takeover embed -->
           <div class="share-card">
             <div class="share-card-head">
-              <strong>Option 4 · Aggressive embed</strong>
+              <strong>Option 5 · Aggressive embed</strong>
               <span class="share-tag">Full-page takeover</span>
             </div>
             <p class="share-desc">For sites with headers, footers, or themes that interfere. This snippet hides all other page content and gives the recorder full-screen. Best on a dedicated "testimonials" page on your site.</p>
@@ -4692,6 +4750,7 @@ P.S. If you started recording one and got self-conscious and closed the tab — 
               <button onclick="copyShare('shareAggressive', this)" class="secondary" style="align-self:flex-start;">Copy</button>
             </div>
           </div>
+          </details><!-- /share-advanced -->
 
           <!-- Bonus: short link (kept from previous design) -->
           <div class="share-card">
@@ -5006,7 +5065,7 @@ async function registerCustomDomain() {
       card.innerHTML =
         '<div style="padding:14px; background:#fdf0ed; border:1px solid #b84a3a; border-radius:6px; font-size:13px; color:#1a1a1a; line-height:1.6;">' +
         '<strong>Custom domains aren\\u2019t enabled on this worker yet.</strong>' +
-        '<p style="margin:6px 0 0;">The owner needs to set up Cloudflare for SaaS one time before this feature works. In the meantime, use the <strong>iframe embed</strong> on the Branding tab \\u2014 it gives you the same outcome (your domain in the URL bar) with zero DNS setup.</p>' +
+        '<p style="margin:6px 0 0;">The owner needs to set up Cloudflare for SaaS one time before this feature works. In the meantime, use the <strong>Branded redirect</strong> option on the Share tab \\u2014 a single line of code on a page on your site, no DNS work, and visitors still see your domain.</p>' +
         '</div>';
       return;
     }
@@ -5769,12 +5828,23 @@ function updateShareBox() {
   // to the recorder. No iframe = no styling conflicts on themed sites.
   const redirectEl = document.getElementById("shareRedirect");
   if (redirectEl) redirectEl.value = '<meta http-equiv="refresh" content="0; url=' + url + '">';
-  // Option 3 — one-line, zero-config iframe embed. The recorder owns its
+  // Option 3 — pre-written outreach message. Drop-in copy that buyers can
+  // paste into email/SMS/DMs to ask a single customer for a testimonial.
+  // Uses the same custom-domain-aware URL.
+  const quickTextEl = document.getElementById("shareQuickText");
+  if (quickTextEl) {
+    quickTextEl.value =
+      "Hey [NAME] — quick favor.\\n\\n" +
+      "I'm putting together a few short customer videos and yours would mean a lot. Three quick prompts on your phone, takes about 60 seconds. No app, no upload, no editing — just hit the link, answer, done.\\n\\n" +
+      url + "\\n\\n" +
+      "Thank you.";
+  }
+  // Option 4 — one-line, zero-config iframe embed. The recorder owns its
   // own background, sizing, and overflow, so the host page only has to
   // provide a slot.
   document.getElementById("shareIframe").value =
     '<iframe src="' + url + '" allow="camera; microphone" style="width:100%;height:100vh;border:0;display:block;" title="Share your story"></iframe>';
-  // Option 3 — aggressive full-page-takeover embed. Hides all other host
+  // Option 5 — aggressive full-page-takeover embed. Hides all other host
   // content with !important rules + a max-z-index overlay div, and uses
   // the active client's saved background color so the takeover blends in.
   const bgInput = document.querySelector('input[data-key="backgroundColor"]');
