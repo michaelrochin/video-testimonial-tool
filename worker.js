@@ -1597,15 +1597,38 @@ const CONFIG_HTML = `<!DOCTYPE html>
 <style>
   * { box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #faf7f2;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    background:
+      radial-gradient(1200px 800px at 100% -10%, rgba(201, 169, 97, 0.08), transparent 60%),
+      radial-gradient(900px 600px at -10% 100%, rgba(26, 26, 26, 0.04), transparent 60%),
+      #faf7f2;
     color: #1a1a1a;
     margin: 0;
     padding: 24px;
     line-height: 1.5;
+    font-feature-settings: "ss01" on, "cv11" on;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  h1 { font-family: Georgia, serif; font-weight: normal; margin: 0 0 8px; }
+  h1 { font-family: Georgia, serif; font-weight: 400; margin: 0 0 8px; letter-spacing: -0.015em; }
   .sub { color: #6b6b6b; margin: 0 0 24px; font-size: 14px; }
+  /* Premium polish */
+  input, select, textarea, button { font-family: inherit; -webkit-font-smoothing: antialiased; }
+  input[type="text"], input[type="number"], input[type="email"], input[type="password"], textarea, select {
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+  input[type="text"]:focus, input[type="number"]:focus, input[type="email"]:focus, input[type="password"]:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: #c9a961 !important;
+    box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.18);
+  }
+  /* Buttons get a lift */
+  button:not(.tab):not(.sub-tab):not(.copy-btn) {
+    transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+  button:not(.tab):not(.sub-tab):not(.copy-btn):not(:disabled):not(.secondary):hover {
+    transform: translateY(-1px);
+  }
   .layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 420px;
@@ -1711,28 +1734,98 @@ const CONFIG_HTML = `<!DOCTYPE html>
     background: transparent; font-weight: 500; font-size: 13px; line-height: 1.2;
   }
   .fp-link { font-size: 13px; text-decoration: underline; }
-  .panel { background: white; border: 1px solid #e5e0d6; border-radius: 6px; padding: 24px; }
-  .section { margin-bottom: 28px; }
-  .section h2 { font-size: 16px; font-weight: 600; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid #e5e0d6; }
-  .field { margin-bottom: 14px; }
-  .field label { display: block; font-size: 13px; color: #6b6b6b; margin-bottom: 4px; }
+  .panel {
+    background: white;
+    border: 1px solid #e5e0d6;
+    border-radius: 14px;
+    padding: 32px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 28px -12px rgba(15, 23, 42, 0.08);
+  }
+  .section {
+    margin-bottom: 32px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid #f0ebe0;
+  }
+  .section:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+  .section h2 {
+    font-size: 17px; font-weight: 700; margin: 0 0 14px;
+    letter-spacing: -0.005em;
+    color: #1a1a1a;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; color: #1a1a1a; margin-bottom: 6px; font-weight: 500; }
   .field input, .field textarea, .field select {
-    width: 100%; padding: 8px 10px; border: 1px solid #e5e0d6; border-radius: 4px; font-size: 14px; font-family: inherit;
+    width: 100%; padding: 11px 14px; border: 1px solid #e5e0d6; border-radius: 8px;
+    font-size: 14px; font-family: inherit; background: white; color: #1a1a1a;
   }
-  .field textarea { resize: vertical; min-height: 60px; }
+  .field textarea { resize: vertical; min-height: 72px; line-height: 1.55; }
   .field-row { display: grid; grid-template-columns: 80px 1fr; gap: 12px; align-items: center; }
-  .field-row input[type=color] { width: 80px; height: 38px; padding: 2px; cursor: pointer; }
-  .gate { max-width: 360px; margin: 80px auto; text-align: center; }
-  .gate input { width: 100%; padding: 12px; border: 1px solid #e5e0d6; border-radius: 4px; font-size: 16px; margin: 16px 0; }
-  button {
-    background: #c9a961; color: white; border: none; padding: 10px 20px; border-radius: 4px;
-    cursor: pointer; font-size: 14px; font-weight: 500; font-family: inherit;
+  .field-row input[type=color] {
+    width: 80px; height: 42px; padding: 2px;
+    border: 1px solid #e5e0d6; border-radius: 8px;
+    cursor: pointer; background: white;
   }
-  button:hover { background: #a88840; }
-  button.secondary { background: transparent; color: #6b6b6b; border: 1px solid #e5e0d6; }
-  button.secondary:hover { background: #f5f0e6; }
-  .top-bar { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
-  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  .gate { max-width: 380px; margin: 80px auto; text-align: center; padding: 32px;
+    background: white; border: 1px solid #e5e0d6; border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 12px 36px -12px rgba(0,0,0,0.12);
+  }
+  .gate input {
+    width: 100%; padding: 13px 14px; border: 1px solid #e5e0d6;
+    border-radius: 8px; font-size: 15px; margin: 16px 0;
+  }
+  button {
+    background: linear-gradient(180deg, #c9a961 0%, #b89752 100%);
+    color: white; border: none; padding: 11px 22px; border-radius: 999px;
+    cursor: pointer; font-size: 14px; font-weight: 600; font-family: inherit;
+    letter-spacing: 0.005em;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.2),
+      0 1px 2px rgba(15,23,42,0.06),
+      0 4px 14px -4px rgba(201,169,97,0.4);
+  }
+  button:hover:not(:disabled):not(.secondary) {
+    background: linear-gradient(180deg, #c9a961 0%, #a88840 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.2),
+      0 2px 4px rgba(15,23,42,0.08),
+      0 8px 22px -4px rgba(201,169,97,0.5);
+  }
+  button:active:not(:disabled) { transform: translateY(0); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+  button.secondary {
+    background: white; color: #1a1a1a; border: 1px solid #e5e0d6;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+  }
+  button.secondary:hover:not(:disabled) {
+    background: #faf7f2;
+    border-color: #d8d2c2;
+    box-shadow: 0 2px 6px rgba(15,23,42,0.06);
+  }
+  .top-bar {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    flex-wrap: wrap; gap: 16px; margin-bottom: 24px;
+    max-width: 1240px; margin-left: auto; margin-right: auto;
+    padding: 20px 24px;
+    background: white;
+    border: 1px solid #e5e0d6;
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 6px 20px -8px rgba(15,23,42,0.06);
+  }
+  .top-bar h1 { font-size: 22px; }
+  .top-bar h1 svg { vertical-align: middle; }
+  .top-bar .sub { margin: 0; font-size: 13px; color: #6b6b6b; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .controls select {
+    padding: 9px 12px !important;
+    border: 1px solid #e5e0d6 !important;
+    border-radius: 8px !important;
+    background: #faf7f2 !important;
+    font-size: 13px !important;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .controls select:hover { background: white !important; border-color: #d8d2c2 !important; }
   .preview {
     position: sticky; top: 24px;
     border: 1px solid #e5e0d6; border-radius: 6px; overflow: hidden;
@@ -1740,20 +1833,48 @@ const CONFIG_HTML = `<!DOCTYPE html>
   }
   .preview iframe { width: 100%; height: 100%; border: 0; }
   .preview-label { padding: 8px 12px; background: #f5f0e6; border-bottom: 1px solid #e5e0d6; font-size: 12px; color: #6b6b6b; text-transform: uppercase; letter-spacing: 0.5px; }
-  .toast { position: fixed; bottom: 24px; right: 24px; background: #1a1a1a; color: white; padding: 12px 18px; border-radius: 4px; font-size: 14px; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
-  .toast.show { opacity: 1; }
+  .toast {
+    position: fixed; bottom: 28px; right: 28px;
+    background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+    color: white; padding: 14px 22px; border-radius: 12px;
+    font-size: 14px; font-weight: 500;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18), 0 12px 32px -8px rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.08);
+    z-index: 9999;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
   .question-block { background: #faf7f2; padding: 12px; border-radius: 4px; margin-bottom: 10px; }
   .question-block label { font-size: 12px; }
   .error { color: #b84a3a; padding: 12px; background: #fdf0ed; border-radius: 4px; }
   .help-text { font-size: 12px; color: #6b6b6b; margin-top: 4px; }
-  .tabs { display: flex; gap: 4px; border-bottom: 1px solid #e5e0d6; margin-bottom: 24px; }
-  .tab {
-    background: transparent; border: none; padding: 12px 18px; cursor: pointer;
-    font-size: 14px; font-weight: 500; color: #6b6b6b; font-family: inherit;
-    border-bottom: 2px solid transparent; margin-bottom: -1px; border-radius: 0;
+  .tabs {
+    display: flex; gap: 4px;
+    margin: 0 auto 24px;
+    max-width: 1240px;
+    padding: 6px;
+    background: white;
+    border: 1px solid #e5e0d6;
+    border-radius: 12px;
+    width: fit-content;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04);
   }
-  .tab:hover { color: #1a1a1a; background: transparent; }
-  .tab.active { color: #1a1a1a; border-bottom-color: #c9a961; }
+  .tab {
+    background: transparent; border: none; padding: 9px 22px; cursor: pointer;
+    font-size: 14px; font-weight: 600; color: #6b6b6b; font-family: inherit;
+    border-radius: 8px;
+    transition: background 0.18s, color 0.18s;
+    box-shadow: none;
+  }
+  .tab:hover { color: #1a1a1a; background: #faf7f2; transform: none; box-shadow: none; }
+  .tab.active {
+    color: white;
+    background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1), 0 2px 8px -2px rgba(0,0,0,0.15);
+  }
+  .tab.active:hover { color: white; background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%); }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
   .sub-tabs {
