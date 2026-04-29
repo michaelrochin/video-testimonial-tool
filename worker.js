@@ -911,10 +911,10 @@ async function handleWelcomeAccess(request, env, url) {
     const tierBlock = tier === "agency"
       ? '<div class="card" style="border:2px solid #c9a961; background: linear-gradient(135deg,#fdfbf6,#f5efe2);">' +
         '<span class="step-num" style="background:#c9a961;">⭐</span>' +
-        '<h3>You\\'re on the Agency plan</h3>' +
+        '<h3>You are on the Agency plan</h3>' +
         '<p>You can run StokeReel for unlimited clients and brands from a single install. Specifically:</p>' +
         '<ul style="font-size: 14px; line-height: 1.7; margin: 8px 0 0; padding-left: 20px;">' +
-        '<li><strong>One worker, unlimited clients.</strong> Don\\'t deploy a separate worker per client. Use the dashboard\\'s client switcher.</li>' +
+        '<li><strong>One worker, unlimited clients.</strong> No need to deploy a separate worker per client. Use the dashboard client switcher.</li>' +
         '<li><strong>Each client = its own slug.</strong> Type a new slug (e.g. <code>fretsfordays</code>) in the dashboard. Their recorder URL becomes <code>recorder.com/r/fretsfordays/&lt;funnel&gt;</code>.</li>' +
         '<li><strong>Reseller rights are explicit.</strong> Charge your clients whatever you want for setup. Most agencies charge $500–$2,000 per client.</li>' +
         '<li><strong>The 5-day email sequence below works for every client.</strong> Adapt the bracketed fields per brand.</li>' +
