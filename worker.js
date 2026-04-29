@@ -415,6 +415,8 @@ const DEFAULT_CONFIG = {
   submitTextLabel: "Submit",
   typeInsteadLabel: "Prefer to type instead? Click here.",
   switchToVideoLabel: "Switch to video instead",
+  showTypeInsteadLink: true,
+  showSwitchToVideoLink: true,
   allowVideo: true,
   allowText: true,
   maxRecordingSeconds: 300,
@@ -1490,8 +1492,22 @@ const CONFIG_HTML = `<!DOCTYPE html>
         <div class="field"><label>Start-over button (review screen)</label><input type="text" data-key="restartLabel" placeholder="Start over"><div class="field-preview" data-preview-for="restartLabel"></div></div>
         <div class="field"><label>Submit button (review screen)</label><input type="text" data-key="submitLabel" placeholder="Looks good — submit"><div class="field-preview" data-preview-for="submitLabel"></div></div>
         <div class="field"><label>Submit button (text-mode)</label><input type="text" data-key="submitTextLabel" placeholder="Submit"><div class="field-preview" data-preview-for="submitTextLabel"></div></div>
-        <div class="field"><label>"Type instead" link</label><input type="text" data-key="typeInsteadLabel" placeholder="Prefer to type instead? Click here."><div class="field-preview" data-preview-for="typeInsteadLabel"></div></div>
-        <div class="field"><label>"Switch back to video" link</label><input type="text" data-key="switchToVideoLabel" placeholder="Switch to video instead"><div class="field-preview" data-preview-for="switchToVideoLabel"></div></div>
+        <div class="field">
+          <label style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" data-key="showTypeInsteadLink" style="margin:0;">
+            <span>"Type instead" link text</span>
+          </label>
+          <input type="text" data-key="typeInsteadLabel" placeholder="Prefer to type instead? Click here.">
+          <div class="field-preview" data-preview-for="typeInsteadLabel"></div>
+        </div>
+        <div class="field">
+          <label style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" data-key="showSwitchToVideoLink" style="margin:0;">
+            <span>"Switch back to video" link text</span>
+          </label>
+          <input type="text" data-key="switchToVideoLabel" placeholder="Switch to video instead">
+          <div class="field-preview" data-preview-for="switchToVideoLabel"></div>
+        </div>
       </div>
       <div class="sub-panel-actions">
         <button onclick="save()">💾 Save changes</button>

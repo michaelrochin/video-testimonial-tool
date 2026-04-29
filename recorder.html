@@ -521,6 +521,8 @@
     submitTextLabel: "Submit",
     typeInsteadLabel: "Prefer to type instead? Click here.",
     switchToVideoLabel: "Switch to video instead",
+    showTypeInsteadLink: true,
+    showSwitchToVideoLink: true,
     allowVideo: true,
     allowText: true,
     maxRecordingSeconds: 300,
@@ -664,13 +666,16 @@
     btnSet("vtSwitchToText", cfg.typeInsteadLabel);
     btnSet("vtSwitchToVideo", cfg.switchToVideoLabel);
 
-    // Hide the "type instead" / "switch to video" toggle links when only one mode is enabled
+    // Hide each toggle link if either: (a) only one mode is enabled, or (b) the link is explicitly hidden
     const allowVideo = cfg.allowVideo !== false;
     const allowText = cfg.allowText !== false;
+    const bothModes = allowText && allowVideo;
+    const showTypeLink = bothModes && cfg.showTypeInsteadLink !== false;
+    const showVideoLink = bothModes && cfg.showSwitchToVideoLink !== false;
     const switchToTextEl = $("vtSwitchToText");
-    if (switchToTextEl) switchToTextEl.parentElement.style.display = allowText && allowVideo ? "" : "none";
+    if (switchToTextEl) switchToTextEl.parentElement.style.display = showTypeLink ? "" : "none";
     const switchToVideoEl = $("vtSwitchToVideo");
-    if (switchToVideoEl) switchToVideoEl.parentElement.style.display = allowText && allowVideo ? "" : "none";
+    if (switchToVideoEl) switchToVideoEl.parentElement.style.display = showVideoLink ? "" : "none";
 
     // Logo on intro and thank-you screens
     const logoIntro = $("vtLogoIntro");
