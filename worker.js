@@ -2294,7 +2294,10 @@ function updateShareBox() {
   if (!client || !course) { box.style.display = "none"; return; }
   // Prefer the customer's custom domain if they set one; fall back to *.workers.dev origin
   const domainInput = document.querySelector('input[data-key="customDomain"]');
-  const rawDomain = (domainInput && domainInput.value || "").trim().replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  let rawDomain = (domainInput && domainInput.value || "").trim();
+  if (rawDomain.indexOf("https://") === 0) rawDomain = rawDomain.slice(8);
+  else if (rawDomain.indexOf("http://") === 0) rawDomain = rawDomain.slice(7);
+  while (rawDomain.endsWith("/")) rawDomain = rawDomain.slice(0, -1);
   const baseUrl = rawDomain ? "https://" + rawDomain : window.location.origin;
   const url = baseUrl + "/r/" + encodeURIComponent(client) + "/" + encodeURIComponent(course);
   document.getElementById("shareUrl").value = url;
