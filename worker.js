@@ -32,7 +32,7 @@ import LANDING_HTML from "./landing.html";
 // this against UPSTREAM_VERSION_URL to detect when an update is available.
 // Use semantic versioning (MAJOR.MINOR.PATCH).
 // --------------------------------------------------------------
-const STOKEREEL_VERSION = "1.4.9";
+const STOKEREEL_VERSION = "1.4.10";
 const UPSTREAM_VERSION_URL = "https://testimonials.michaelrochin.workers.dev/version";
 
 // --------------------------------------------------------------
@@ -4721,13 +4721,6 @@ P.S. If you started recording one and got self-conscious and closed the tab — 
             </div>
           </div>
 
-          <!-- Advanced (collapsed): iframe-based embeds for blank-template pages -->
-          <details class="share-advanced">
-            <summary>
-              <span>Advanced · Iframe embeds</span>
-              <span class="share-tag">For developers / blank pages</span>
-            </summary>
-
           <!-- Option 4: Simple one-line embed -->
           <div class="share-card">
             <div class="share-card-head">
@@ -4752,7 +4745,6 @@ P.S. If you started recording one and got self-conscious and closed the tab — 
               <button onclick="copyShare('shareAggressive', this)" class="secondary" style="align-self:flex-start;">Copy</button>
             </div>
           </div>
-          </details><!-- /share-advanced -->
 
           <!-- Bonus: short link (kept from previous design) -->
           <div class="share-card">
