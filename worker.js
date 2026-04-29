@@ -32,7 +32,7 @@ import LANDING_HTML from "./landing.html";
 // this against UPSTREAM_VERSION_URL to detect when an update is available.
 // Use semantic versioning (MAJOR.MINOR.PATCH).
 // --------------------------------------------------------------
-const STOKEREEL_VERSION = "1.3.0";
+const STOKEREEL_VERSION = "1.3.1";
 const UPSTREAM_VERSION_URL = "https://testimonials.michaelrochin.workers.dev/version";
 
 // --------------------------------------------------------------
@@ -3643,14 +3643,19 @@ const CONFIG_HTML = `<!DOCTYPE html>
   }
   /* Preview block override inside obsidian */
   .sub-panel.obsidian .preview-block {
+    /* preview-block is the 3rd child of .obs-section (a 2-col grid).
+       Span the full grid width so it doesn't fall into the narrow
+       section-head column and collapse. */
+    grid-column: 1 / -1;
     margin-top: 16px;
+    margin-left: 0;
+    width: auto;
+    min-width: 0;
     background: rgba(245,166,35,0.04) !important;
     border: 1px dashed rgba(245,166,35,0.35) !important;
     border-radius: 12px !important;
     padding: 22px !important;
-    margin-left: calc(280px + 36px);
   }
-  @media (max-width: 980px) { .sub-panel.obsidian .preview-block { margin-left: 0; } }
   .sub-panel.obsidian .preview-block::before {
     background: var(--obs-amber) !important;
     color: #14100A !important;
