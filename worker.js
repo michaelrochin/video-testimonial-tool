@@ -28,6 +28,14 @@ import RECORDER_HTML from "./recorder.html";
 import LANDING_HTML from "./landing.html";
 
 // --------------------------------------------------------------
+// Version — bumped on every meaningful release. Customer workers compare
+// this against UPSTREAM_VERSION_URL to detect when an update is available.
+// Use semantic versioning (MAJOR.MINOR.PATCH).
+// --------------------------------------------------------------
+const STOKEREEL_VERSION = "1.0.0";
+const UPSTREAM_VERSION_URL = "https://testimonials.michaelrochin.workers.dev/version";
+
+// --------------------------------------------------------------
 // Credential resolution
 // First-run wizard writes credentials to R2 at _system/setup.json.
 // Older installs use wrangler secrets. Read R2 first, fall back to env.
@@ -85,6 +93,18 @@ export default {
       if ((url.pathname === "/" || url.pathname === "/start") && request.method === "GET") {
         return new Response(LANDING_HTML, { headers: { "Content-Type": "text/html; charset=utf-8" } });
       }
+      // /version — small JSON endpoint customer workers fetch from upstream to
+      // detect when a newer release is available. CORS-open so any worker can
+      // read it.
+      if (url.pathname === "/version" && request.method === "GET") {
+        return new Response(JSON.stringify({ version: STOKEREEL_VERSION }), {
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "public, max-age=300",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      }
       if (url.pathname === "/welcome" && request.method === "GET") {
         return await handleWelcomeAccess(request, env, url);
       }
@@ -117,7 +137,12 @@ export default {
         return withCors(await handleAdminList(request, env));
       }
       if (url.pathname === "/config" && request.method === "GET") {
-        return new Response(CONFIG_HTML, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+        // Inject the current version + upstream URL so the dashboard JS can
+        // run an update-available check on load.
+        const html = CONFIG_HTML
+          .replace("{{STOKEREEL_VERSION}}", STOKEREEL_VERSION)
+          .replace("{{UPSTREAM_VERSION_URL}}", UPSTREAM_VERSION_URL);
+        return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
       }
       if (url.pathname === "/config/get" && request.method === "POST") {
         return withCors(await handleConfigGet(request, env));
@@ -2177,14 +2202,36 @@ const CONFIG_HTML = `<!DOCTYPE html>
     border: 1px solid #e5e0d6; border-radius: 8px;
     cursor: pointer; background: white;
   }
-  .gate { max-width: 380px; margin: 80px auto; text-align: center; padding: 32px;
+  .gate { max-width: 460px; margin: 64px auto; text-align: left; padding: 32px;
     background: white; border: 1px solid #e5e0d6; border-radius: 14px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 12px 36px -12px rgba(0,0,0,0.12);
   }
+  .gate h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 26px; font-weight: 600; margin: 0 0 8px;
+    letter-spacing: -0.015em;
+  }
+  .gate .sub {
+    font-size: 14px; color: #6b6b6b; line-height: 1.55;
+    margin: 0 0 18px;
+  }
   .gate input {
     width: 100%; padding: 13px 14px; border: 1px solid #e5e0d6;
-    border-radius: 8px; font-size: 15px; margin: 16px 0;
+    border-radius: 8px; font-size: 15px; margin: 4px 0 14px;
   }
+  .gate button { width: 100%; }
+  .gate-bookmark {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; margin: 0 0 22px;
+    background: linear-gradient(180deg, #fbf6e8 0%, #f5ecd2 100%);
+    border: 1px solid #ecdfb6;
+    border-radius: 10px;
+    color: #5a4a20;
+    font-size: 12.5px; line-height: 1.5;
+  }
+  .gate-bookmark svg { color: #8a6f30; flex-shrink: 0; margin-top: 2px; }
+  .gate-bookmark strong { display: block; color: #1a1a1a; font-weight: 600; margin-bottom: 1px; }
+  .gate-bookmark span { color: #5a4a20; }
   button {
     background: linear-gradient(180deg, #c9a961 0%, #b89752 100%);
     color: white; border: none; padding: 11px 22px; border-radius: 999px;
@@ -2223,6 +2270,58 @@ const CONFIG_HTML = `<!DOCTYPE html>
     box-shadow: none;
     overflow: visible;
   }
+  /* Update-available banner — sits at the very top of the shell */
+  .update-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    border-bottom: 1px solid #000;
+  }
+  .update-banner-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #c9a961, #b89752);
+    color: #1a1a1a;
+    flex-shrink: 0;
+  }
+  .update-banner-text { flex: 1; }
+  .update-banner-versions {
+    color: #9a9385;
+    margin-left: 6px;
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: 12px;
+  }
+  .update-banner-btn {
+    background: white !important;
+    color: #1a1a1a !important;
+    border: 0 !important;
+    padding: 6px 14px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    cursor: pointer;
+    box-shadow: none !important;
+  }
+  .update-banner-btn:hover { background: #faf7f2 !important; }
+  .update-banner-dismiss {
+    background: transparent !important;
+    color: #9a9385 !important;
+    border: 0 !important;
+    padding: 4px 10px !important;
+    font-size: 18px !important;
+    cursor: pointer;
+    box-shadow: none !important;
+    line-height: 1;
+  }
+  .update-banner-dismiss:hover { color: white !important; }
   /* App header (inside shell — no border/bg of its own) */
   .app-header {
     background: transparent;
@@ -2937,8 +3036,15 @@ const CONFIG_HTML = `<!DOCTYPE html>
 <body>
 
 <div id="gate" class="gate" style="display:none;">
-  <h1>Sign in</h1>
-  <p class="sub">Enter your admin password to access your StokeReel dashboard.</p>
+  <div class="gate-bookmark">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    <div>
+      <strong>Bookmark this page.</strong>
+      <span>This is your StokeReel dashboard — you'll come back here every time you change branding, edit questions, or review submissions.</span>
+    </div>
+  </div>
+  <h1>Sign in to StokeReel</h1>
+  <p class="sub">Your dashboard is where you customize your recorder, edit questions, watch submissions, and grab embed links — all in one place. Enter your admin password to get in.</p>
   <input type="password" id="pw" placeholder="Password" />
   <button onclick="login()">Sign in</button>
   <div id="gateErr" class="error" style="margin-top:12px; display:none;"></div>
@@ -2974,6 +3080,51 @@ const CONFIG_HTML = `<!DOCTYPE html>
 
 <div id="app" style="display:none;">
   <div class="app-shell">
+  <div id="updateBanner" class="update-banner" style="display:none;">
+    <span class="update-banner-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15A9 9 0 1 1 19.65 8.36L23 11"/></svg>
+    </span>
+    <span class="update-banner-text">
+      A newer version of StokeReel is available
+      <span class="update-banner-versions">(<span id="updateBannerCurrent">v0.0.0</span> → <span id="updateBannerLatest">v0.0.0</span>)</span>
+    </span>
+    <button class="update-banner-btn" onclick="document.getElementById('updateModal').style.display='flex';">How to update</button>
+    <button class="update-banner-dismiss" onclick="dismissUpdateBanner()" title="Dismiss until the next version">×</button>
+  </div>
+
+  <div id="updateModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:flex-start; justify-content:center; padding:48px 16px; overflow-y:auto;">
+    <div style="background:white; max-width:680px; width:100%; border-radius:16px; padding:32px 36px; box-shadow:0 24px 60px -12px rgba(15,23,42,0.35); position:relative; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">
+      <button onclick="document.getElementById('updateModal').style.display='none';" style="position:absolute; top:14px; right:14px; background:transparent; border:0; color:#9a9385; font-size:22px; cursor:pointer; padding:4px 10px; border-radius:6px; box-shadow:none;">×</button>
+      <h2 style="font-family: 'Fraunces', Georgia, serif; font-size:24px; font-weight:600; margin:0 0 6px; letter-spacing:-0.015em;">Update to the latest version</h2>
+      <p style="margin:0 0 22px; color:#6b6b6b; font-size:14px; line-height:1.55;">Your install of StokeReel is on <strong id="updateModalCurrent">v0.0.0</strong>. The latest release is <strong id="updateModalLatest">v0.0.0</strong>. Updating takes about 2 minutes and won't touch your videos, submissions, or branding.</p>
+
+      <h3 style="font-size:14px; font-weight:700; margin:0 0 10px; color:#1a1a1a;">Easiest way (recommended)</h3>
+      <ol style="margin:0 0 22px; padding-left:22px; line-height:1.7; font-size:13.5px; color:#1a1a1a;">
+        <li style="margin-bottom:8px;">Open your <a href="https://github.com/" target="_blank" rel="noopener" style="color:#1a1a1a; font-weight:600;">GitHub account</a> and go to your StokeReel repo (the one Cloudflare imported when you first deployed).</li>
+        <li style="margin-bottom:8px;">Click the <strong>⋯</strong> menu near the top → <strong>Settings</strong> → scroll to the bottom → <strong>Delete this repository</strong>. Confirm.</li>
+        <li style="margin-bottom:8px;">In Cloudflare, open <a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages" target="_blank" rel="noopener" style="color:#1a1a1a; font-weight:600;">Workers &amp; Pages</a>, click your StokeReel project, then <strong>Settings → Delete project</strong>.</li>
+        <li style="margin-bottom:8px;">Open your <a href="https://stokereel.com/welcome" target="_blank" rel="noopener" style="color:#1a1a1a; font-weight:600;">StokeReel welcome page</a> (the one with your purchase token) and click <strong>Deploy to Cloudflare</strong> again. This re-imports the latest version.</li>
+        <li style="margin-bottom:8px;">Run the setup wizard at <code style="background:#faf7f2; padding:2px 6px; border-radius:4px; font-size:12.5px;">/setup</code> with the same R2 keys and admin password you used before. Your videos and saved configurations are still there because they live in R2 (which you didn't delete).</li>
+      </ol>
+
+      <details style="border-top:1px dashed #ede4cc; padding-top:14px;">
+        <summary style="cursor:pointer; font-weight:600; color:#6b6b6b; font-size:13px;">Advanced: update via git (faster if you're comfortable with the terminal)</summary>
+        <ol style="margin:10px 0 0; padding-left:22px; line-height:1.7; font-size:13px; color:#1a1a1a;">
+          <li style="margin-bottom:6px;">Clone your existing GitHub repo locally: <code style="background:#faf7f2; padding:2px 6px; border-radius:4px; font-size:12px;">git clone &lt;your-repo-url&gt;</code></li>
+          <li style="margin-bottom:6px;"><code style="background:#faf7f2; padding:2px 6px; border-radius:4px; font-size:12px;">cd</code> into it.</li>
+          <li style="margin-bottom:6px;">Add the upstream source as a remote: <code style="background:#faf7f2; padding:2px 6px; border-radius:4px; font-size:12px;">git remote add upstream https://github.com/michaelrochin/wkr-bundle-x9k4.git</code></li>
+          <li style="margin-bottom:6px;"><code style="background:#faf7f2; padding:2px 6px; border-radius:4px; font-size:12px;">git pull upstream main --allow-unrelated-histories</code></li>
+          <li style="margin-bottom:6px;">Resolve any merge conflicts (usually none for a normal install).</li>
+          <li style="margin-bottom:6px;"><code style="background:#faf7f2; padding:2px 6px; border-radius:4px; font-size:12px;">git push origin main</code> — Cloudflare auto-redeploys within ~1 minute.</li>
+        </ol>
+      </details>
+
+      <div style="margin-top: 22px; display:flex; justify-content:flex-end; gap:8px;">
+        <button onclick="dismissUpdateBanner(); document.getElementById('updateModal').style.display='none';" class="secondary">Remind me later</button>
+      </div>
+    </div>
+  </div>
+
   <div class="app-header">
     <div class="brand-row">
       <div class="brand-mark">
@@ -3667,6 +3818,51 @@ P.S. If you started recording one and got self-conscious and closed the tab — 
 const STORAGE_KEY = "vt_admin_pw";
 const STORAGE_CLIENT = "vt_config_client";
 const STORAGE_COURSE = "vt_config_course";
+const STOKEREEL_VERSION = "{{STOKEREEL_VERSION}}";
+const UPSTREAM_VERSION_URL = "{{UPSTREAM_VERSION_URL}}";
+const UPDATE_DISMISS_KEY = "vt_dismissed_update_for";
+
+// Compare two semver strings. Returns 1 if a > b, -1 if a < b, 0 if equal.
+function semverCompare(a, b) {
+  const pa = String(a || "0").split(".").map(n => parseInt(n, 10) || 0);
+  const pb = String(b || "0").split(".").map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    const x = pa[i] || 0, y = pb[i] || 0;
+    if (x > y) return 1;
+    if (x < y) return -1;
+  }
+  return 0;
+}
+
+async function checkForUpdate() {
+  // If user already dismissed this exact upstream version, skip the banner.
+  let upstream;
+  try {
+    const res = await fetch(UPSTREAM_VERSION_URL, { cache: "no-store" });
+    if (!res.ok) return;
+    const data = await res.json();
+    upstream = data && data.version;
+  } catch { return; }
+  if (!upstream) return;
+  if (semverCompare(upstream, STOKEREEL_VERSION) <= 0) return;
+  const dismissed = localStorage.getItem(UPDATE_DISMISS_KEY);
+  if (dismissed === upstream) return;
+  // Show the banner
+  const banner = document.getElementById("updateBanner");
+  document.getElementById("updateBannerCurrent").textContent = "v" + STOKEREEL_VERSION;
+  document.getElementById("updateBannerLatest").textContent = "v" + upstream;
+  document.getElementById("updateModalCurrent").textContent = "v" + STOKEREEL_VERSION;
+  document.getElementById("updateModalLatest").textContent = "v" + upstream;
+  banner.dataset.upstream = upstream;
+  banner.style.display = "flex";
+}
+
+function dismissUpdateBanner() {
+  const banner = document.getElementById("updateBanner");
+  const upstream = banner && banner.dataset.upstream;
+  if (upstream) localStorage.setItem(UPDATE_DISMISS_KEY, upstream);
+  if (banner) banner.style.display = "none";
+}
 let currentConfig = null;
 let currentScope = null;
 let currentInherited = false;
@@ -4094,7 +4290,12 @@ function populateFontSelect() {
 }
 
 function showGate() { document.getElementById("gate").style.display = "block"; document.getElementById("app").style.display = "none"; }
-function showApp() { document.getElementById("gate").style.display = "none"; document.getElementById("app").style.display = "block"; }
+function showApp() {
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  // Fire-and-forget — checks upstream version and reveals the update banner if needed.
+  try { checkForUpdate(); } catch {}
+}
 
 async function login() {
   const pw = document.getElementById("pw").value;
