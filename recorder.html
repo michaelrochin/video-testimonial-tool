@@ -723,6 +723,10 @@
       const stored = localStorage.getItem("vt_preview_" + CLIENT + "_" + COURSE);
       if (stored) applyConfig(JSON.parse(stored));
     } catch {}
+    // Force-enable the intro CTA so the dashboard preview shows the button at full opacity
+    // (normally it's disabled until name + email are typed).
+    const introCta = $("vtStartBtn");
+    if (introCta) introCta.disabled = false;
     // Listen for live updates from the dashboard parent window
     window.addEventListener("message", (e) => {
       if (e.data && e.data.type === "VT_CONFIG_UPDATE" && e.data.config) {
@@ -757,6 +761,11 @@
   const startBtn = $("vtStartBtn");
 
   function validateIntro() {
+    // In preview mode, never disable the CTA — the dashboard customer wants to see it look active.
+    if (new URLSearchParams(window.location.search).get("preview") === "1") {
+      startBtn.disabled = false;
+      return;
+    }
     const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim());
     const validName = nameInput.value.trim().length >= 2;
     startBtn.disabled = !(validEmail && validName);

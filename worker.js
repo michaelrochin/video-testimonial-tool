@@ -1631,7 +1631,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
 
     <div class="live-preview-panel" id="livePreviewPanel">
       <div class="live-preview-header">Live preview · updates as you type</div>
-      <iframe id="livePreviewFrame" class="live-preview-iframe" title="Live recorder preview"></iframe>
+      <iframe id="livePreviewFrame" class="live-preview-iframe" title="Live recorder preview" allow="camera; microphone"></iframe>
       <div class="live-preview-empty" id="livePreviewEmpty" style="display:none;">Pick a client to see the live preview here.</div>
     </div>
   </div>
