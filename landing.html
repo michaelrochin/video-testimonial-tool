@@ -83,6 +83,42 @@
   footer { text-align: center; color: var(--muted); font-size: 14px; padding: 40px 0; }
   code { background: white; border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-size: 14px; }
   hr { border: none; border-top: 1px solid var(--border); margin: 56px 0; }
+  .demo-recorder {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 12px 36px -8px rgba(0,0,0,0.1);
+  }
+  .demo-recorder iframe {
+    display: block;
+    width: 100%;
+    min-height: 760px;
+    border: 0;
+  }
+  .demo-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .demo-gallery video {
+    width: 100%;
+    height: 320px;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #000;
+    cursor: pointer;
+    border: 1px solid var(--border);
+  }
+  .demo-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 24px;
+    background: white;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+  }
 </style>
 </head>
 <body>
@@ -120,6 +156,19 @@
       <div class="label">This tool</div>
       <div class="num">$0–18 / yr</div>
     </div>
+  </div>
+
+  <h2 style="margin-top: 56px;">Try it yourself — record a 30-second demo</h2>
+  <p style="color: var(--muted); margin: 0 0 20px;">Hit record. Answer the prompt. Submit. The best demos show up in the gallery below.</p>
+
+  <div class="demo-recorder">
+    <iframe src="/r/demo/landing" allow="camera; microphone" loading="lazy" title="StokeReel live demo recorder"></iframe>
+  </div>
+
+  <h3 style="margin-top: 32px; font-family: Georgia, serif; font-weight: 400; font-size: 22px;">Recent demos from visitors</h3>
+  <p style="color: var(--muted); font-size: 14px; margin: 0 0 16px;">A few people who've already tried it. Yours could be next.</p>
+  <div id="demoGallery" class="demo-gallery">
+    <p class="demo-empty" style="color: var(--muted); font-size: 14px;">Loading…</p>
   </div>
 
   <h2>Everything VideoAsk does — owned by you, free forever</h2>
@@ -215,6 +264,27 @@
 <footer>
   StokeReel · stokereel.com · Self-hosted on Cloudflare
 </footer>
+
+<script>
+(async function loadDemoGallery() {
+  const gallery = document.getElementById("demoGallery");
+  if (!gallery) return;
+  try {
+    const res = await fetch("/featured?client=demo");
+    const data = await res.json();
+    const items = (data && data.items) || [];
+    if (items.length === 0) {
+      gallery.innerHTML = '<p class="demo-empty">No demos yet — be the first to record one above. Yours will appear here once it’s reviewed.</p>';
+      return;
+    }
+    gallery.innerHTML = items.slice(0, 8).map(it =>
+      '<video controls preload="metadata" playsinline src="' + it.videoUrl + '"></video>'
+    ).join("");
+  } catch (e) {
+    gallery.innerHTML = '<p class="demo-empty">Couldn’t load the demo gallery right now. Try refreshing.</p>';
+  }
+})();
+</script>
 
 </body>
 </html>
