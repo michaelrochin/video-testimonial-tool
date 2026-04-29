@@ -1,0 +1,22 @@
+# Template wrangler.toml for the "Deploy to Cloudflare" button.
+#
+# When you publish this project to GitHub, REPLACE the contents of `wrangler.toml`
+# with this file (or rename this file to wrangler.toml on the public branch).
+# The difference: no hardcoded account_id, no specific bucket name override —
+# Cloudflare auto-creates the bucket and uses the authenticated user's account.
+
+name = "testimonials"
+main = "worker.js"
+compatibility_date = "2024-12-01"
+
+# R2 bucket for storing videos, configs, and metadata.
+# Cloudflare auto-creates this on first deploy if it doesn't exist.
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "testimonials"
+
+# Allow `import recorderHtml from "./recorder.html"` in worker.js
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true

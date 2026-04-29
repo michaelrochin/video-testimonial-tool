@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Self-hosted video testimonials — $0 / mo forever</title>
+<meta name="description" content="Replace VideoAsk's $99/mo bill with a self-hosted video testimonial tool that runs on Cloudflare's free tier. One click to deploy.">
+<style>
+  :root {
+    --cream: #faf7f2;
+    --ink: #1a1a1a;
+    --warm: #c9a961;
+    --warm-dark: #a88840;
+    --muted: #6b6b6b;
+    --border: #e5e0d6;
+    --error: #b84a3a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--cream); color: var(--ink); line-height: 1.6;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 64px 24px; }
+  h1 { font-family: Georgia, serif; font-size: 48px; line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 16px; font-weight: 400; }
+  h2 { font-family: Georgia, serif; font-size: 28px; line-height: 1.2; margin: 48px 0 16px; font-weight: 400; }
+  h3 { font-size: 16px; margin: 0 0 6px; }
+  p, li { font-size: 17px; color: #2a2a2a; }
+  .lead { font-size: 19px; color: var(--muted); margin: 0 0 36px; }
+  .deploy-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 28px 0 8px; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--ink); color: white; padding: 14px 24px; border-radius: 999px;
+    text-decoration: none; font-size: 16px; font-weight: 600; border: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+  .btn-primary svg { width: 20px; height: 20px; }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent; color: var(--muted); padding: 12px 20px; border-radius: 999px;
+    text-decoration: none; font-size: 14px; font-weight: 500; border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: white; color: var(--ink); }
+  .deploy-note { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .pricing-strip {
+    display: flex; gap: 24px; flex-wrap: wrap; margin: 32px 0;
+    padding: 18px 22px; background: white; border: 1px solid var(--border); border-radius: 10px;
+  }
+  .pricing-strip div { flex: 1; min-width: 160px; }
+  .pricing-strip .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .pricing-strip .num { font-size: 22px; font-weight: 600; }
+  .pricing-strip .strike { text-decoration: line-through; color: var(--muted); font-weight: 400; font-size: 18px; }
+  .feature-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px; margin: 28px 0;
+  }
+  .feature {
+    background: white; padding: 20px; border-radius: 10px; border: 1px solid var(--border);
+  }
+  .feature h3 { color: var(--warm-dark); }
+  .feature p { font-size: 14px; color: var(--muted); margin: 0; }
+  .steps { counter-reset: s; padding: 0; list-style: none; }
+  .steps li {
+    counter-increment: s; padding: 18px 22px 18px 64px; background: white; border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: 12px; position: relative;
+  }
+  .steps li::before {
+    content: counter(s); position: absolute; left: 22px; top: 18px;
+    width: 28px; height: 28px; border-radius: 50%; background: var(--warm); color: white;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+  }
+  .faq dt { font-weight: 600; margin-top: 18px; }
+  .faq dd { margin: 4px 0 0; color: var(--muted); }
+  .premium-block {
+    margin: 56px 0 0; padding: 28px 28px 24px; background: var(--ink); color: #f5f1e8;
+    border-radius: 16px;
+  }
+  .premium-block h2 { color: white; margin-top: 0; }
+  .premium-block p { color: rgba(245,241,232,0.85); }
+  .premium-block .btn-primary { background: var(--warm); color: white; box-shadow: 0 4px 14px rgba(201,169,97,0.4); }
+  footer { text-align: center; color: var(--muted); font-size: 14px; padding: 40px 0; }
+  code { background: white; border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 56px 0; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <p style="text-transform:uppercase; letter-spacing:0.1em; font-size:12px; color: var(--muted); font-weight:600; margin: 0 0 14px;">Self-hosted · No SaaS · Free forever</p>
+  <h1>Stop paying $99/mo for VideoAsk.</h1>
+  <p class="lead">A video testimonial collector that runs on your own Cloudflare account. Costs $0 today, $1.50/mo at full saturation, never a penny more. Click below to deploy your own copy in 60 seconds.</p>
+
+  <div class="deploy-row">
+    <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/YOUR-GITHUB-USER/video-testimonial-tool" class="btn-primary">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2L2 19h20L12 2zm0 4l7.53 13H4.47L12 6z"/></svg>
+      Deploy to Cloudflare
+    </a>
+    <a href="#how-it-works" class="btn-secondary">How does it work? →</a>
+  </div>
+  <p class="deploy-note">Free Cloudflare account required. No credit card needed for the first ~50 testimonials.</p>
+
+  <div class="pricing-strip">
+    <div>
+      <div class="label">VideoAsk Pro</div>
+      <div class="num strike">$1,188 / yr</div>
+    </div>
+    <div>
+      <div class="label">Bonjoro / Senja</div>
+      <div class="num strike">$348+ / yr</div>
+    </div>
+    <div>
+      <div class="label">This tool</div>
+      <div class="num">$0–18 / yr</div>
+    </div>
+  </div>
+
+  <h2>Everything you'd want from a paid tool — owned by you</h2>
+
+  <div class="feature-grid">
+    <div class="feature">
+      <h3>Video + text</h3>
+      <p>Records in the browser. Has a text fallback for camera-shy people.</p>
+    </div>
+    <div class="feature">
+      <h3>Multi-funnel ready</h3>
+      <p>Each product page gets its own testimonials folder, automatically.</p>
+    </div>
+    <div class="feature">
+      <h3>Full branding control</h3>
+      <p>Logo, colors, fonts, copy, button labels. All editable in a dashboard.</p>
+    </div>
+    <div class="feature">
+      <h3>Inline review</h3>
+      <p>Watch every submission inline. Filter by funnel. Mark as featured.</p>
+    </div>
+    <div class="feature">
+      <h3>Webhook notifications</h3>
+      <p>Slack, Discord, Zapier — get pinged the second a testimonial lands.</p>
+    </div>
+    <div class="feature">
+      <h3>Featured carousel</h3>
+      <p>Star your best videos. They auto-appear on the intro screen.</p>
+    </div>
+    <div class="feature">
+      <h3>Post-submit redirect</h3>
+      <p>Hand them a coupon, a download, a Calendly link after submitting.</p>
+    </div>
+    <div class="feature">
+      <h3>CSV export</h3>
+      <p>Pull the full submission list out anytime.</p>
+    </div>
+  </div>
+
+  <h2 id="how-it-works">How it works (60 seconds, three steps)</h2>
+
+  <ol class="steps">
+    <li>
+      <h3>Click "Deploy to Cloudflare" above</h3>
+      <p>Sign in to (or create) a free Cloudflare account. Cloudflare deploys the worker into your account and creates an R2 bucket for you.</p>
+    </li>
+    <li>
+      <h3>The setup wizard runs</h3>
+      <p>You'll be prompted for: an admin password, your Cloudflare Account ID, and a one-time R2 API token. The wizard explains exactly where to find each one. About 4 minutes.</p>
+    </li>
+    <li>
+      <h3>Start sending the link</h3>
+      <p>Your dashboard at <code>/config</code> generates a shareable URL like <code>recorder.yourbrand.com/play-what-you-hear</code>. Send it. Submissions land in your bucket. Watch them inline.</p>
+    </li>
+  </ol>
+
+  <h2>FAQs</h2>
+
+  <dl class="faq">
+    <dt>Do I really pay nothing per month?</dt>
+    <dd>The first ~10GB of storage (50–100 testimonials) is free on Cloudflare R2 forever. After that it's $0.015/GB/month — about $1.50/month at 100GB. Bandwidth (egress) is unmetered.</dd>
+
+    <dt>Where do my videos live?</dt>
+    <dd>In your own Cloudflare R2 bucket. Not mine. You own them, you can download them, you can delete them.</dd>
+
+    <dt>What if Cloudflare goes down?</dt>
+    <dd>Cloudflare's edge network has 99.99% uptime — better than VideoAsk by design. If it ever fully goes down, the rest of the internet does too.</dd>
+
+    <dt>Does this work on GoHighLevel? Webflow? WordPress?</dt>
+    <dd>Yes. The recorder works as a hosted URL (just send the link) or as a one-line iframe embed in any HTML/Custom Code block — GHL, WordPress, Webflow, Squarespace, ClickFunnels, Kajabi, Carrd, anywhere.</dd>
+
+    <dt>What about HIPAA / GDPR?</dt>
+    <dd>Your data lives in your account. You sign your DPA directly with Cloudflare. No third party (not even me) is a data processor.</dd>
+
+    <dt>Can I customize without code?</dt>
+    <dd>Yes. The branding dashboard at <code>/config</code> lets you change colors, fonts, copy, questions, button labels — and shows live previews of every change.</dd>
+
+    <dt>What if I need help?</dt>
+    <dd>Most setups take under 10 minutes self-serve. If you'd rather not handle it yourself, see the done-for-you option below.</dd>
+  </dl>
+
+  <hr>
+
+  <div class="premium-block">
+    <h2>Don't want to set it up yourself?</h2>
+    <p>Done-for-you install — I configure your Cloudflare, deploy the worker, brand it to your colors, write 5 testimonial-collection emails for your existing customers, and hand you working URLs. About 30 minutes of your time. <strong>$800, one-time.</strong></p>
+    <a href="mailto:YOUR_EMAIL@DOMAIN.com?subject=Done-for-you%20install" class="btn-primary">Email me to book →</a>
+  </div>
+
+</div>
+
+<footer>
+  Built by Michael · Self-hosted on Cloudflare · MIT licensed
+</footer>
+
+</body>
+</html>

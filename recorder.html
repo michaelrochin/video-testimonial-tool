@@ -1,0 +1,1116 @@
+<!--
+  Video Testimonial Recorder
+  Drop this entire file into a GHL Custom Code / HTML element.
+  Set WORKER_URL below to your deployed Cloudflare Worker URL.
+-->
+<style>
+  .vt-wrap {
+    --vt-cream: #faf7f2;
+    --vt-ink: #1a1a1a;
+    --vt-warm: #c9a961;
+    --vt-warm-dark: #a88840;
+    --vt-muted: #6b6b6b;
+    --vt-border: #e5e0d6;
+    --vt-error: #b84a3a;
+    font-family: Georgia, "Times New Roman", serif;
+    background: white;
+    color: var(--vt-ink);
+    max-width: 560px;
+    margin: 40px auto;
+    padding: 56px 48px;
+    border-radius: 16px;
+    border: 1px solid var(--vt-border);
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 12px 40px -8px rgba(15, 23, 42, 0.08);
+  }
+  @media (max-width: 600px) {
+    .vt-wrap { margin: 16px; padding: 32px 24px; border-radius: 12px; }
+  }
+  .vt-wrap h1 {
+    font-size: 36px;
+    margin: 0 0 14px;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+  }
+  .vt-wrap .vt-sub {
+    color: var(--vt-muted);
+    margin: 0 0 36px;
+    font-size: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.55;
+  }
+  .vt-wrap label {
+    display: block;
+    font-size: 13px;
+    margin: 18px 0 6px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--vt-ink);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+  .vt-wrap input[type="text"],
+  .vt-wrap input[type="email"] {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1px solid var(--vt-border);
+    border-radius: 8px;
+    font-size: 16px;
+    background: var(--vt-cream);
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  }
+  .vt-wrap input:focus {
+    outline: none;
+    border-color: var(--vt-warm);
+    background: white;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--vt-warm) 18%, transparent);
+  }
+  .vt-wrap button {
+    background: var(--vt-warm);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    font-size: 15px;
+    border-radius: 999px;
+    cursor: pointer;
+    margin-top: 28px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 12px -2px color-mix(in srgb, var(--vt-warm) 35%, transparent);
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s, opacity 0.15s;
+  }
+  .vt-wrap button:hover:not(:disabled) {
+    background: var(--vt-warm-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08), 0 10px 24px -4px color-mix(in srgb, var(--vt-warm) 45%, transparent);
+  }
+  .vt-wrap button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  .vt-wrap button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .vt-wrap button.vt-secondary {
+    background: transparent;
+    color: var(--vt-muted);
+    border: 1px solid var(--vt-border);
+    box-shadow: none;
+  }
+  .vt-wrap button.vt-secondary:hover:not(:disabled) {
+    background: var(--vt-cream);
+    color: var(--vt-ink);
+    border-color: color-mix(in srgb, var(--vt-ink) 20%, var(--vt-border));
+    box-shadow: none;
+    transform: none;
+  }
+  .vt-wrap button.vt-record {
+    background: var(--vt-error);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 12px -2px color-mix(in srgb, var(--vt-error) 35%, transparent);
+  }
+  .vt-wrap button.vt-record:hover:not(:disabled) {
+    background: #963a2c;
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08), 0 10px 24px -4px color-mix(in srgb, var(--vt-error) 45%, transparent);
+  }
+  .vt-wrap button.vt-stop {
+    background: var(--vt-ink);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1), 0 4px 12px -2px rgba(15, 23, 42, 0.25);
+  }
+  .vt-step {
+    display: none;
+  }
+  .vt-step.active {
+    display: block;
+  }
+  .vt-question {
+    font-size: 26px;
+    margin: 0 0 10px;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    font-weight: 400;
+  }
+  .vt-progress {
+    color: var(--vt-muted);
+    font-size: 12px;
+    margin-bottom: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .vt-step-dots {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+  .vt-step-dots .vt-dot {
+    flex: 1;
+    height: 3px;
+    background: var(--vt-border);
+    border-radius: 2px;
+    transition: background 0.25s;
+  }
+  .vt-step-dots .vt-dot.active {
+    background: var(--vt-warm);
+  }
+  .vt-step-dots .vt-dot.complete {
+    background: color-mix(in srgb, var(--vt-warm) 50%, var(--vt-border));
+  }
+  .vt-video-container {
+    width: 100%;
+    background: #000;
+    border-radius: 14px;
+    overflow: hidden;
+    margin: 20px 0 24px;
+    position: relative;
+    aspect-ratio: 9 / 16;
+    max-height: 64vh;
+    box-shadow: 0 12px 36px -8px rgba(15, 23, 42, 0.18), 0 2px 4px rgba(15, 23, 42, 0.06);
+  }
+  .vt-video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .vt-rec-indicator {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .vt-rec-indicator.active {
+    display: flex;
+  }
+  .vt-rec-indicator::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background: var(--vt-error);
+    border-radius: 50%;
+    animation: vt-pulse 1.2s infinite;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--vt-error) 60%, transparent);
+  }
+  .vt-rec-indicator #vtTimer {
+    font-variant-numeric: tabular-nums;
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+  }
+  @keyframes vt-pulse {
+    0% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, var(--vt-error) 60%, transparent); }
+    70% { opacity: 0.7; box-shadow: 0 0 0 6px color-mix(in srgb, var(--vt-error) 0%, transparent); }
+    100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, var(--vt-error) 0%, transparent); }
+  }
+  .vt-button-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .vt-button-row button {
+    margin-top: 0;
+  }
+  .vt-error-msg {
+    background: #fdf0ed;
+    color: var(--vt-error);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-top: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+  }
+  .vt-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--vt-cream);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 16px;
+    border: 1px solid var(--vt-border);
+  }
+  .vt-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--vt-warm), var(--vt-warm-dark));
+    width: 0%;
+    transition: width 0.4s ease;
+    border-radius: 999px;
+  }
+  .vt-helper {
+    font-size: 14px;
+    color: var(--vt-muted);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    margin: 8px 0 0;
+    line-height: 1.5;
+  }
+  .vt-final {
+    text-align: center;
+    padding: 24px 8px 8px;
+  }
+  .vt-final h1 {
+    font-size: 42px;
+    margin: 12px 0 16px;
+    letter-spacing: -0.02em;
+  }
+  .vt-final p {
+    font-size: 17px;
+    color: var(--vt-muted);
+    line-height: 1.55;
+    margin: 0 0 8px;
+  }
+  .vt-final .vt-checkmark {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--vt-warm) 14%, white);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 8px auto 4px;
+  }
+  .vt-final .vt-checkmark svg {
+    width: 32px;
+    height: 32px;
+    color: var(--vt-warm-dark);
+  }
+  .vt-wrap textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--vt-border);
+    border-radius: 4px;
+    font-size: 16px;
+    background: white;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    resize: vertical;
+    min-height: 90px;
+    line-height: 1.5;
+  }
+  .vt-wrap textarea:focus {
+    outline: none;
+    border-color: var(--vt-warm);
+  }
+  .vt-text-q {
+    margin-top: 24px;
+  }
+  .vt-text-q h3 {
+    font-size: 18px;
+    font-weight: normal;
+    margin: 0 0 4px;
+    line-height: 1.4;
+  }
+  .vt-text-q .vt-helper {
+    margin: 0 0 8px;
+  }
+  .vt-wrap button.vt-toggle-link {
+    display: inline-block;
+    margin: 20px 0 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
+    color: var(--vt-muted);
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: color-mix(in srgb, var(--vt-muted) 35%, transparent);
+    cursor: pointer;
+    font-weight: 400;
+    letter-spacing: 0;
+    transform: none;
+    transition: color 0.15s, text-decoration-color 0.15s;
+    width: auto;
+  }
+  .vt-wrap button.vt-toggle-link:hover:not(:disabled) {
+    background: none;
+    color: var(--vt-ink);
+    box-shadow: none;
+    transform: none;
+    text-decoration-color: var(--vt-ink);
+  }
+  .vt-featured-label {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 12px;
+    color: var(--vt-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin: 0 0 12px;
+  }
+  .vt-featured-row {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .vt-featured-row video {
+    flex: 0 0 auto;
+    width: 110px;
+    height: 160px;
+    border-radius: 10px;
+    background: #000;
+    object-fit: cover;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .vt-featured-row video:hover {
+    border-color: var(--vt-warm);
+    transform: scale(1.02);
+  }
+</style>
+
+<div class="vt-wrap" id="vtApp">
+  <!-- Step 1: Intro / contact info -->
+  <div class="vt-step active" id="vtStep-intro">
+    <img id="vtLogoIntro" alt="" style="display:none; max-width:160px; max-height:64px; margin: 0 auto 24px; object-fit: contain;">
+    <div id="vtFeaturedCarousel" style="display:none; margin-bottom: 28px;"></div>
+    <h1>Share your story</h1>
+    <p class="vt-sub">Three quick questions in one short video. Hit record, answer them one after another, tap "Next question" as you go.</p>
+
+    <label for="vtName">Your name</label>
+    <input type="text" id="vtName" autocomplete="name" />
+
+    <label for="vtEmail">Email</label>
+    <input type="email" id="vtEmail" autocomplete="email" />
+
+    <button id="vtStartBtn" disabled>Get started</button>
+    <div id="vtIntroError"></div>
+
+    <div>
+      <button type="button" class="vt-toggle-link" id="vtSwitchToText">Prefer to type instead? Click here.</button>
+    </div>
+  </div>
+
+  <!-- Text-mode step: alternative to video recording -->
+  <div class="vt-step" id="vtStep-text">
+    <h1>Share your story</h1>
+    <p class="vt-sub">Three quick questions. Take your time.</p>
+
+    <div id="vtTextQuestions"></div>
+
+    <button id="vtSubmitTextBtn">Submit</button>
+    <div id="vtTextError"></div>
+
+    <div>
+      <button type="button" class="vt-toggle-link" id="vtSwitchToVideo">Switch to video instead</button>
+    </div>
+  </div>
+
+  <!-- Step 2-4: Question recordings (rendered dynamically) -->
+  <div class="vt-step" id="vtStep-question">
+    <div class="vt-step-dots" id="vtStepDots"></div>
+    <p class="vt-progress" id="vtProgressLabel">Question 1 of 3</p>
+    <h2 class="vt-question" id="vtQuestionText"></h2>
+    <p class="vt-helper" id="vtQuestionHelper"></p>
+
+    <div class="vt-video-container">
+      <video id="vtVideo" playsinline muted></video>
+      <div class="vt-rec-indicator" id="vtRecIndicator">REC <span id="vtTimer">0:00</span></div>
+    </div>
+
+    <div class="vt-button-row" id="vtRecordControls">
+      <button id="vtRecordBtn" class="vt-record">Start recording</button>
+    </div>
+
+    <div class="vt-button-row" id="vtReviewControls" style="display:none;">
+      <button id="vtRetakeBtn" class="vt-secondary">Start over</button>
+      <button id="vtNextBtn">Looks good — submit</button>
+    </div>
+
+    <div id="vtRecordError"></div>
+  </div>
+
+  <!-- Step 5: Uploading -->
+  <div class="vt-step" id="vtStep-upload">
+    <h1>Sending it over...</h1>
+    <p class="vt-sub">Don't close this tab. This can take a minute on a slow connection.</p>
+    <div class="vt-progress-bar">
+      <div class="vt-progress-bar-fill" id="vtUploadFill"></div>
+    </div>
+    <p class="vt-helper" id="vtUploadStatus">Preparing...</p>
+  </div>
+
+  <!-- Step 6: Done -->
+  <div class="vt-step" id="vtStep-done">
+    <div class="vt-final">
+      <img id="vtLogoDone" alt="" style="display:none; max-width:140px; max-height:50px; margin: 0 auto 16px; object-fit: contain;">
+      <div class="vt-checkmark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <h1>Thank you.</h1>
+      <p>That means a lot. I'll be in touch.</p>
+      <a id="vtThankYouBtn" href="#" style="display:none;"><button type="button" style="margin-top:24px;"></button></a>
+      <p class="vt-helper" style="margin-top: 32px;"></p>
+    </div>
+  </div>
+
+  <!-- Step: Error -->
+  <div class="vt-step" id="vtStep-error">
+    <div class="vt-final">
+      <h1>Something went wrong.</h1>
+      <p id="vtFinalError">Please try again.</p>
+      <button onclick="location.reload()" style="margin-top: 24px;">Start over</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // ====================================================================
+  // CONFIGURATION
+  // The only value you should change here is WORKER_URL. Everything else
+  // (colors, copy, questions) is managed in the branding dashboard at:
+  //   <WORKER_URL>/config
+  // When this page is served directly from the Worker (/r/...), WORKER_URL
+  // is auto-detected — no edit required for hosted/iframe deployments.
+  // ====================================================================
+
+  const WORKER_URL = (typeof window !== "undefined" && window.VT_WORKER_URL)
+    ? window.VT_WORKER_URL
+    : "https://testimonials.michaelrochin.workers.dev";
+
+  // Fallback defaults — used if the config fetch fails (e.g. first ever load).
+  // These are immediately overridden by whatever the dashboard has saved.
+  const DEFAULTS = {
+    brandColor: "#c9a961",
+    brandColorDark: "#a88840",
+    backgroundColor: "#faf7f2",
+    textColor: "#1a1a1a",
+    mutedTextColor: "#6b6b6b",
+    borderColor: "#e5e0d6",
+    errorColor: "#b84a3a",
+    headingFont: 'Georgia, "Times New Roman", serif',
+    headingFontGoogleUrl: "",
+    headline: "Share your story",
+    subheadline: 'Three quick questions in one short video. Hit record, answer them one after another, tap "Next question" as you go.',
+    thankYouHeader: "Thank you.",
+    thankYouBody: "That means a lot. I'll be in touch.",
+    signature: "",
+    supportEmail: "",
+    getStartedLabel: "Get started",
+    startRecordingLabel: "Start recording",
+    nextQuestionLabel: "Next question →",
+    doneReviewLabel: "Done — review",
+    restartLabel: "Start over",
+    submitLabel: "Looks good — submit",
+    submitTextLabel: "Submit",
+    typeInsteadLabel: "Prefer to type instead? Click here.",
+    switchToVideoLabel: "Switch to video instead",
+    allowVideo: true,
+    allowText: true,
+    maxRecordingSeconds: 300,
+    thankYouButtonLabel: "",
+    thankYouButtonUrl: "",
+    notifyWebhookUrl: "",
+    logoUrl: "",
+    questions: [
+      { text: "What were you struggling with before you joined?", helper: "What was actually frustrating you?" },
+      { text: "What's the biggest thing that's changed for you?", helper: "Be specific — what shifted, what's different now?" },
+      { text: "What would you tell someone who's on the fence?", helper: "Imagine a friend asked if they should buy. What would you say?" }
+    ]
+  };
+
+  // Live config — populated by fetch, or falls back to DEFAULTS
+  let cfg = { ...DEFAULTS };
+  // Backwards-compat aliases referenced elsewhere in the script
+  let QUESTIONS = cfg.questions;
+  let MAX_RECORDING_SECONDS = cfg.maxRecordingSeconds;
+
+  // Auto-detect course slug from URL path so one HTML file works on every product page.
+  // E.g. https://go.fretsfordays.com/play-what-you-hear-testimonial -> "play-what-you-hear-testimonial"
+  function getCourseSlug() {
+    try {
+      const path = window.location.pathname.replace(/^\/+|\/+$/g, "");
+      if (!path) return "general";
+      const last = path.split("/").pop();
+      const cleaned = last.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, "");
+      return cleaned || "general";
+    } catch (e) {
+      return "general";
+    }
+  }
+  const COURSE = (typeof window !== "undefined" && window.VT_COURSE) ? window.VT_COURSE : getCourseSlug();
+
+  // Auto-detect client slug from hostname so submissions get partitioned per brand.
+  // E.g. https://go.fretsfordays.com -> "fretsfordays"; https://www.colesbass.com -> "colesbass"
+  function getClientSlug() {
+    try {
+      const host = window.location.hostname;
+      if (host === "localhost" || /^\d+\.\d+\.\d+\.\d+$/.test(host)) return "local";
+      const stripped = host.replace(/^(www|go|app|portal|funnels?|pages?)\./i, "");
+      const parts = stripped.split(".");
+      const brand = parts.length >= 2 ? parts[parts.length - 2] : parts[0];
+      return (brand || "general").toLowerCase().replace(/[^a-z0-9-]/g, "-") || "general";
+    } catch (e) {
+      return "general";
+    }
+  }
+  const CLIENT = (typeof window !== "undefined" && window.VT_CLIENT) ? window.VT_CLIENT : getClientSlug();
+
+  // ============================================================
+  // State
+  // ============================================================
+  const state = {
+    name: "",
+    email: "",
+    currentQ: 0,
+    recording: null,    // Single Blob containing the full take
+    mediaStream: null,
+    recorder: null,
+    chunks: [],
+    timerInterval: null,
+    elapsed: 0
+  };
+
+  // ============================================================
+  // Element refs
+  // ============================================================
+  const $ = (id) => document.getElementById(id);
+  const steps = {
+    intro: $("vtStep-intro"),
+    question: $("vtStep-question"),
+    text: $("vtStep-text"),
+    upload: $("vtStep-upload"),
+    done: $("vtStep-done"),
+    error: $("vtStep-error")
+  };
+
+  function showStep(name) {
+    Object.values(steps).forEach(s => s.classList.remove("active"));
+    steps[name].classList.add("active");
+  }
+
+  function loadGoogleFont(url) {
+    if (!url) return;
+    if (document.querySelector(`link[data-vt-font][href="${url}"]`)) return;
+    document.querySelectorAll('link[data-vt-font]').forEach(l => l.remove());
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = url;
+    link.setAttribute("data-vt-font", "1");
+    document.head.appendChild(link);
+  }
+
+  function applyConfig(c) {
+    cfg = { ...DEFAULTS, ...c };
+    QUESTIONS = cfg.questions && cfg.questions.length ? cfg.questions : DEFAULTS.questions;
+    MAX_RECORDING_SECONDS = cfg.maxRecordingSeconds || DEFAULTS.maxRecordingSeconds;
+    if (cfg.headingFontGoogleUrl) loadGoogleFont(cfg.headingFontGoogleUrl);
+
+    // Colors via CSS custom properties on the wrapper
+    const wrap = document.getElementById("vtApp");
+    if (wrap) {
+      wrap.style.setProperty("--vt-cream", cfg.backgroundColor);
+      wrap.style.setProperty("--vt-ink", cfg.textColor);
+      wrap.style.setProperty("--vt-warm", cfg.brandColor);
+      wrap.style.setProperty("--vt-warm-dark", cfg.brandColorDark);
+      wrap.style.setProperty("--vt-muted", cfg.mutedTextColor);
+      wrap.style.setProperty("--vt-border", cfg.borderColor);
+      wrap.style.setProperty("--vt-error", cfg.errorColor);
+      wrap.style.fontFamily = cfg.headingFont;
+    }
+
+    // Copy
+    const set = (sel, val) => { const el = document.querySelector(sel); if (el && val !== undefined) el.textContent = val; };
+    set("#vtStep-intro h1", cfg.headline);
+    set("#vtStep-intro .vt-sub", cfg.subheadline);
+    set("#vtStep-text h1", cfg.headline);
+    set("#vtStep-done h1", cfg.thankYouHeader);
+    set("#vtStep-done p:not(.vt-helper)", cfg.thankYouBody);
+    const sigEl = document.querySelector("#vtStep-done .vt-helper");
+    if (sigEl) sigEl.textContent = cfg.signature || "";
+
+    // Error screen support email
+    const errEl = $("vtFinalError");
+    if (errEl) {
+      if (cfg.supportEmail) {
+        errEl.innerHTML = 'Please try again, or email <a href="mailto:' + cfg.supportEmail + '">' + cfg.supportEmail + '</a> and let me know.';
+      } else {
+        errEl.textContent = "Please try again.";
+      }
+    }
+
+    // Static button labels
+    const btnSet = (id, val) => { const el = $(id); if (el && val !== undefined) el.textContent = val; };
+    btnSet("vtStartBtn", cfg.getStartedLabel);
+    btnSet("vtRetakeBtn", cfg.restartLabel);
+    btnSet("vtNextBtn", cfg.submitLabel);
+    btnSet("vtSubmitTextBtn", cfg.submitTextLabel);
+    btnSet("vtSwitchToText", cfg.typeInsteadLabel);
+    btnSet("vtSwitchToVideo", cfg.switchToVideoLabel);
+
+    // Hide the "type instead" / "switch to video" toggle links when only one mode is enabled
+    const allowVideo = cfg.allowVideo !== false;
+    const allowText = cfg.allowText !== false;
+    const switchToTextEl = $("vtSwitchToText");
+    if (switchToTextEl) switchToTextEl.parentElement.style.display = allowText && allowVideo ? "" : "none";
+    const switchToVideoEl = $("vtSwitchToVideo");
+    if (switchToVideoEl) switchToVideoEl.parentElement.style.display = allowText && allowVideo ? "" : "none";
+
+    // Logo on intro and thank-you screens
+    const logoIntro = $("vtLogoIntro");
+    const logoDone = $("vtLogoDone");
+    if (cfg.logoUrl) {
+      if (logoIntro) { logoIntro.src = cfg.logoUrl; logoIntro.style.display = "block"; }
+      if (logoDone) { logoDone.src = cfg.logoUrl; logoDone.style.display = "block"; }
+    } else {
+      if (logoIntro) logoIntro.style.display = "none";
+      if (logoDone) logoDone.style.display = "none";
+    }
+
+    // Thank-you redirect button
+    const thankBtnLink = $("vtThankYouBtn");
+    const thankBtn = thankBtnLink ? thankBtnLink.querySelector("button") : null;
+    if (thankBtnLink && thankBtn) {
+      if (cfg.thankYouButtonLabel && cfg.thankYouButtonUrl) {
+        thankBtn.textContent = cfg.thankYouButtonLabel;
+        thankBtnLink.href = cfg.thankYouButtonUrl;
+        thankBtnLink.style.display = "inline-block";
+      } else {
+        thankBtnLink.style.display = "none";
+      }
+    }
+  }
+
+  // Apply defaults immediately so the page renders cleanly even if the fetch is slow,
+  // then fetch the live config and override.
+  applyConfig(DEFAULTS);
+  fetch(`${WORKER_URL}/config/public?client=${encodeURIComponent(CLIENT)}&course=${encodeURIComponent(COURSE)}`)
+    .then(r => r.ok ? r.json() : null)
+    .then(c => { if (c) applyConfig(c); })
+    .catch(() => {});
+
+  // Fetch featured testimonials and render carousel above intro form
+  fetch(`${WORKER_URL}/featured?client=${encodeURIComponent(CLIENT)}`)
+    .then(r => r.ok ? r.json() : { items: [] })
+    .then(({ items }) => {
+      if (!items || !items.length) return;
+      const wrap = $("vtFeaturedCarousel");
+      if (!wrap) return;
+      const videos = items.map(it => `<video preload="metadata" muted playsinline src="${it.videoUrl}" onclick="this.muted=!this.muted;this.paused?this.play():this.pause();"></video>`).join("");
+      wrap.innerHTML = `<p class="vt-featured-label">Hear from past students</p><div class="vt-featured-row">${videos}</div>`;
+      wrap.style.display = "block";
+    })
+    .catch(() => {});
+
+  // ============================================================
+  // Step 1: Intro
+  // ============================================================
+  const nameInput = $("vtName");
+  const emailInput = $("vtEmail");
+  const startBtn = $("vtStartBtn");
+
+  function validateIntro() {
+    const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim());
+    const validName = nameInput.value.trim().length >= 2;
+    startBtn.disabled = !(validEmail && validName);
+  }
+
+  nameInput.addEventListener("input", validateIntro);
+  emailInput.addEventListener("input", validateIntro);
+
+  startBtn.addEventListener("click", async () => {
+    state.name = nameInput.value.trim();
+    state.email = emailInput.value.trim();
+    // If video is disabled but text is allowed, skip camera and go straight to text mode.
+    if (cfg.allowVideo === false && cfg.allowText !== false) {
+      renderTextQuestions();
+      showStep("text");
+      return;
+    }
+    try {
+      await initCamera();
+      state.currentQ = 0;
+      renderQuestion();
+      showStep("question");
+    } catch (err) {
+      $("vtIntroError").innerHTML = '<div class="vt-error-msg">Couldn\'t access your camera or microphone. Please allow access in your browser settings and refresh.</div>';
+      console.error(err);
+    }
+  });
+
+  // ============================================================
+  // Camera setup
+  // ============================================================
+  async function initCamera() {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 1280 } },
+      audio: true
+    });
+    state.mediaStream = stream;
+    const video = $("vtVideo");
+    video.srcObject = stream;
+    video.muted = true;
+    await video.play();
+  }
+
+  // ============================================================
+  // Question rendering & recording
+  // ============================================================
+  function renderStepDots() {
+    const dots = $("vtStepDots");
+    if (!dots) return;
+    dots.innerHTML = QUESTIONS.map((_, i) => {
+      let cls = "vt-dot";
+      if (i < state.currentQ) cls += " complete";
+      else if (i === state.currentQ) cls += " active";
+      return `<span class="${cls}"></span>`;
+    }).join("");
+  }
+
+  function renderQuestion() {
+    const q = QUESTIONS[state.currentQ];
+    renderStepDots();
+    $("vtProgressLabel").textContent = `Question ${state.currentQ + 1} of ${QUESTIONS.length}`;
+    $("vtQuestionText").textContent = q.text;
+    $("vtQuestionHelper").textContent = q.helper || "";
+
+    // Always show live preview when on the question step. If we were previewing
+    // a recorded blob (e.g. user hit "Start over"), tear that down first.
+    const video = $("vtVideo");
+    if (video.srcObject !== state.mediaStream) {
+      if (video.src) {
+        URL.revokeObjectURL(video.src);
+        video.removeAttribute("src");
+        video.load();
+      }
+      video.srcObject = state.mediaStream;
+      video.muted = true;
+      video.controls = false;
+      video.play().catch(() => {});
+    }
+
+    // Button state depends on whether we're already recording
+    const isRecording = state.recorder && state.recorder.state === "recording";
+    const isLastQ = state.currentQ === QUESTIONS.length - 1;
+    const controls = $("vtRecordControls");
+
+    const escape = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    if (!isRecording) {
+      // Pre-record state — only valid on Q1
+      controls.innerHTML = '<button id="vtRecordBtn" class="vt-record">' + escape(cfg.startRecordingLabel) + '</button>';
+      $("vtRecordBtn").addEventListener("click", startRecording);
+    } else if (isLastQ) {
+      // Recording, on the last question — finishing button
+      controls.innerHTML = '<button id="vtFinishBtn" class="vt-stop">' + escape(cfg.doneReviewLabel) + '</button>';
+      $("vtFinishBtn").addEventListener("click", stopRecording);
+    } else {
+      // Recording, mid-take — advance button
+      controls.innerHTML = '<button id="vtNextQBtn">' + escape(cfg.nextQuestionLabel) + '</button>';
+      $("vtNextQBtn").addEventListener("click", goToNextQuestion);
+    }
+
+    $("vtRecordControls").style.display = "flex";
+    $("vtReviewControls").style.display = "none";
+    $("vtRecordError").innerHTML = "";
+  }
+
+  function goToNextQuestion() {
+    if (state.currentQ < QUESTIONS.length - 1) {
+      state.currentQ++;
+      renderQuestion();
+    }
+  }
+
+  function startRecording() {
+    state.chunks = [];
+    state.elapsed = 0;
+
+    const candidates = [
+      "video/mp4;codecs=h264,aac",
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm"
+    ];
+    let mimeType = "";
+    for (const m of candidates) {
+      if (MediaRecorder.isTypeSupported(m)) { mimeType = m; break; }
+    }
+
+    try {
+      state.recorder = new MediaRecorder(state.mediaStream, mimeType ? { mimeType } : undefined);
+    } catch (e) {
+      $("vtRecordError").innerHTML = '<div class="vt-error-msg">Your browser doesn\'t support video recording. Try Chrome or Safari.</div>';
+      return;
+    }
+
+    state.recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) state.chunks.push(e.data);
+    };
+    state.recorder.onstop = () => {
+      const blob = new Blob(state.chunks, { type: state.recorder.mimeType || "video/webm" });
+      state.recording = blob;
+      stopTimer();
+      $("vtRecIndicator").classList.remove("active");
+      showRecordingPreview(blob);
+    };
+
+    state.recorder.start();
+    $("vtRecIndicator").classList.add("active");
+    startTimer();
+
+    // Re-render so the button switches from "Start recording" to "Next question"
+    renderQuestion();
+  }
+
+  function stopRecording() {
+    if (state.recorder && state.recorder.state !== "inactive") {
+      state.recorder.stop();
+    }
+  }
+
+  function startTimer() {
+    state.elapsed = 0;
+    updateTimerDisplay();
+    state.timerInterval = setInterval(() => {
+      state.elapsed++;
+      updateTimerDisplay();
+      if (state.elapsed >= MAX_RECORDING_SECONDS) {
+        stopRecording();
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (state.timerInterval) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
+  }
+
+  function updateTimerDisplay() {
+    const m = Math.floor(state.elapsed / 60);
+    const s = state.elapsed % 60;
+    $("vtTimer").textContent = `${m}:${s.toString().padStart(2, "0")}`;
+  }
+
+  function showRecordingPreview(blob) {
+    const video = $("vtVideo");
+    video.srcObject = null;
+    video.src = URL.createObjectURL(blob);
+    video.muted = false;
+    video.controls = true;
+
+    const dots = $("vtStepDots");
+    if (dots) {
+      dots.innerHTML = QUESTIONS.map(() => '<span class="vt-dot complete"></span>').join("");
+    }
+    $("vtProgressLabel").textContent = "Review";
+    $("vtQuestionText").textContent = "Watch it back";
+    $("vtQuestionHelper").textContent = "If it sounds good, hit submit. Otherwise start over.";
+
+    $("vtRecordControls").style.display = "none";
+    $("vtReviewControls").style.display = "flex";
+  }
+
+  $("vtRetakeBtn").addEventListener("click", () => {
+    // Drop the recording, reset state, and return to Q1 with live preview
+    state.recording = null;
+    state.recorder = null;
+    state.chunks = [];
+    state.elapsed = 0;
+    state.currentQ = 0;
+    renderQuestion();
+  });
+
+  $("vtNextBtn").addEventListener("click", () => {
+    uploadAll();
+  });
+
+  // ============================================================
+  // Upload
+  // ============================================================
+  async function uploadAll() {
+    showStep("upload");
+
+    // Stop the camera
+    if (state.mediaStream) {
+      state.mediaStream.getTracks().forEach(t => t.stop());
+    }
+
+    try {
+      const blob = state.recording;
+      const ext = blob.type.includes("mp4") ? "mp4" : "webm";
+
+      // 1. Get a presigned upload URL from the worker
+      $("vtUploadStatus").textContent = "Preparing upload...";
+      const presignRes = await fetch(`${WORKER_URL}/presign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: state.name,
+          email: state.email,
+          extension: ext,
+          contentType: blob.type,
+          course: COURSE,
+          client: CLIENT
+        })
+      });
+      if (!presignRes.ok) throw new Error("presign failed: " + (await presignRes.text()));
+      const { uploadUrl, key: presignKey } = await presignRes.json();
+
+      // 2. Upload to R2
+      $("vtUploadStatus").textContent = "Uploading...";
+      await uploadWithProgress(uploadUrl, blob, blob.type, (pct) => {
+        $("vtUploadFill").style.width = pct + "%";
+      });
+
+      // 3. Fire-and-forget notification webhook (errors here don't block the user)
+      fetch(`${WORKER_URL}/notify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client: CLIENT, course: COURSE, name: state.name, email: state.email,
+          type: "video", key: presignKey
+        })
+      }).catch(() => {});
+
+      showStep("done");
+    } catch (err) {
+      console.error(err);
+      $("vtFinalError").textContent = "Upload failed: " + err.message + ". Please try again" + (cfg.supportEmail ? " or email " + cfg.supportEmail : "") + ".";
+      showStep("error");
+    }
+  }
+
+  // ============================================================
+  // Text-mode flow
+  // ============================================================
+  function renderTextQuestions() {
+    const container = $("vtTextQuestions");
+    container.innerHTML = QUESTIONS.map((q, i) => `
+      <div class="vt-text-q">
+        <h3>${q.text}</h3>
+        ${q.helper ? `<p class="vt-helper">${q.helper}</p>` : ""}
+        <textarea data-q="${i}" rows="4" placeholder="Type your answer here..."></textarea>
+      </div>
+    `).join("");
+  }
+
+  $("vtSwitchToText").addEventListener("click", () => {
+    state.name = nameInput.value.trim();
+    state.email = emailInput.value.trim();
+    if (!state.name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email)) {
+      $("vtIntroError").innerHTML = '<div class="vt-error-msg">Please enter your name and email first.</div>';
+      return;
+    }
+    $("vtIntroError").innerHTML = "";
+    renderTextQuestions();
+    showStep("text");
+  });
+
+  $("vtSwitchToVideo").addEventListener("click", () => {
+    showStep("intro");
+  });
+
+  $("vtSubmitTextBtn").addEventListener("click", async () => {
+    const textareas = document.querySelectorAll("#vtTextQuestions textarea");
+    const answers = [];
+    for (const ta of textareas) {
+      const val = ta.value.trim();
+      if (val.length < 2) {
+        $("vtTextError").innerHTML = '<div class="vt-error-msg">Please answer all three questions before submitting.</div>';
+        return;
+      }
+      answers.push(val);
+    }
+    $("vtTextError").innerHTML = "";
+    await submitText(answers);
+  });
+
+  async function submitText(answers) {
+    showStep("upload");
+    $("vtUploadStatus").textContent = "Sending...";
+    $("vtUploadFill").style.width = "30%";
+
+    try {
+      const payload = {
+        name: state.name,
+        email: state.email,
+        client: CLIENT,
+        course: COURSE,
+        submittedAt: new Date().toISOString(),
+        type: "text",
+        responses: QUESTIONS.map((q, i) => ({
+          question: q.text,
+          answer: answers[i]
+        }))
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+
+      const presignRes = await fetch(`${WORKER_URL}/presign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: state.name,
+          email: state.email,
+          extension: "json",
+          contentType: "application/json",
+          course: COURSE,
+          client: CLIENT
+        })
+      });
+      if (!presignRes.ok) throw new Error("presign failed: " + (await presignRes.text()));
+      const { uploadUrl, key: presignKey } = await presignRes.json();
+
+      $("vtUploadFill").style.width = "70%";
+      await uploadWithProgress(uploadUrl, blob, "application/json", (pct) => {
+        $("vtUploadFill").style.width = (70 + pct * 0.3) + "%";
+      });
+
+      // Fire-and-forget notification webhook
+      fetch(`${WORKER_URL}/notify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client: CLIENT, course: COURSE, name: state.name, email: state.email,
+          type: "text", key: presignKey
+        })
+      }).catch(() => {});
+
+      showStep("done");
+    } catch (err) {
+      console.error(err);
+      $("vtFinalError").textContent = "Submit failed: " + err.message + ". Please try again.";
+      showStep("error");
+    }
+  }
+
+  function uploadWithProgress(url, blob, contentType, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", url);
+      xhr.setRequestHeader("Content-Type", contentType);
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      });
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else reject(new Error("upload failed with status " + xhr.status));
+      };
+      xhr.onerror = () => reject(new Error("network error during upload"));
+      xhr.send(blob);
+    });
+  }
+})();
+</script>
