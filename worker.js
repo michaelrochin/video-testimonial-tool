@@ -1530,6 +1530,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
           <button onclick="applyContentPreset()" id="applyPresetBtn" disabled>Use this template</button>
         </div>
         <p class="help-text" id="contentPresetDescription" style="margin: 10px 0 0; display:none; padding:10px 12px; background:#fdfbf6; border-left:3px solid #c9a961; border-radius:4px; line-height:1.5;"></p>
+        <div id="contentPresetPreview" style="display:none; margin-top:12px;"></div>
       </div>
 
       <div class="section">
@@ -2042,12 +2043,39 @@ function populateContentPresets() {
   sel.addEventListener("change", () => {
     const preset = CONTENT_PRESETS.find(p => p.id === sel.value);
     const descEl = document.getElementById("contentPresetDescription");
+    const previewEl = document.getElementById("contentPresetPreview");
     const btn = document.getElementById("applyPresetBtn");
     if (preset) {
       if (descEl) { descEl.textContent = preset.description; descEl.style.display = "block"; }
       if (btn) btn.disabled = false;
+      if (previewEl) {
+        const questionsHtml = preset.questions.map((q, i) =>
+          '<div style="margin-top:8px; padding:10px 12px; background:#faf7f2; border-radius:5px; border:1px solid #e5e0d6;">' +
+          '<div style="font-weight:600; color:#1a1a1a;">Q' + (i + 1) + '. ' + escapeHtml(q.text) + '</div>' +
+          (q.helper ? '<div style="color:#6b6b6b; font-size:12px; margin-top:3px;">' + escapeHtml(q.helper) + '</div>' : '') +
+          '</div>'
+        ).join("");
+        previewEl.innerHTML =
+          '<div style="padding:16px; background:white; border:1px dashed #c9a961; border-radius:8px; position:relative;">' +
+          '<div style="position:absolute; top:-9px; left:14px; background:#c9a961; color:white; font-size:10px; font-weight:700; letter-spacing:0.06em; padding:2px 9px; border-radius:999px;">PREVIEW</div>' +
+          '<div style="margin-bottom:12px;">' +
+          '<div style="font-weight:700; color:#6b6b6b; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Welcome title</div>' +
+          '<div style="font-family:Georgia,serif; font-size:18px;">' + escapeHtml(preset.welcome.title) + '</div>' +
+          '</div>' +
+          '<div style="margin-bottom:14px;">' +
+          '<div style="font-weight:700; color:#6b6b6b; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Welcome subtitle</div>' +
+          '<div style="color:#1a1a1a; font-size:14px; line-height:1.5;">' + escapeHtml(preset.welcome.subtitle) + '</div>' +
+          '</div>' +
+          '<div>' +
+          '<div style="font-weight:700; color:#6b6b6b; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Questions (' + preset.questions.length + ')</div>' +
+          questionsHtml +
+          '</div>' +
+          '</div>';
+        previewEl.style.display = "block";
+      }
     } else {
       if (descEl) descEl.style.display = "none";
+      if (previewEl) previewEl.style.display = "none";
       if (btn) btn.disabled = true;
     }
   });
