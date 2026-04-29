@@ -75,6 +75,13 @@ export default {
     const url = new URL(request.url);
 
     try {
+      // If this request is hitting a registered custom hostname (Cloudflare for SaaS),
+      // treat /<funnel-slug> as /r/<mapped-client>/<funnel-slug>. Pretty URLs for customers.
+      const customRoute = await resolveCustomHostnameRoute(env, url.hostname, url.pathname);
+      if (customRoute && request.method === "GET") {
+        return serveHostedRecorder(url.origin, customRoute.client, customRoute.course);
+      }
+
       if ((url.pathname === "/" || url.pathname === "/start") && request.method === "GET") {
         return new Response(LANDING_HTML, { headers: { "Content-Type": "text/html; charset=utf-8" } });
       }
@@ -142,6 +149,15 @@ export default {
       }
       if (url.pathname === "/admin/upload-logo" && request.method === "POST") {
         return withCors(await handleLogoUpload(request, env));
+      }
+      if (url.pathname === "/admin/custom-domain/register" && request.method === "POST") {
+        return withCors(await handleCustomDomainRegister(request, env));
+      }
+      if (url.pathname === "/admin/custom-domain/status" && request.method === "POST") {
+        return withCors(await handleCustomDomainStatus(request, env));
+      }
+      if (url.pathname === "/admin/custom-domain/delete" && request.method === "POST") {
+        return withCors(await handleCustomDomainDelete(request, env));
       }
       const logoMatch = url.pathname.match(/^\/logo\/([^/]+)$/);
       if (logoMatch && request.method === "GET") {
@@ -868,6 +884,207 @@ async function handleAdminExport(request, env) {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="testimonials-${new Date().toISOString().slice(0,10)}.csv"`
     }
+  });
+}
+
+// --------------------------------------------------------------
+// Custom hostnames (Cloudflare for SaaS)
+// Lets customers point recorder.theirsite.com -> Michael's worker without
+// migrating DNS to Cloudflare. They just add ONE CNAME at their existing DNS.
+// --------------------------------------------------------------
+
+function sanitizeHostname(s) {
+  if (!s) return "";
+  let h = String(s).trim().toLowerCase();
+  if (h.indexOf("https://") === 0) h = h.slice(8);
+  else if (h.indexOf("http://") === 0) h = h.slice(7);
+  while (h.endsWith("/")) h = h.slice(0, -1);
+  return h;
+}
+
+function isValidHostname(h) {
+  if (!h) return false;
+  if (h.length < 4 || h.length > 253) return false;
+  if (h.indexOf("/") !== -1 || h.indexOf(" ") !== -1) return false;
+  if (h.indexOf(".") === -1) return false;
+  return /^[a-z0-9.-]+$/.test(h);
+}
+
+async function readHostnameMapping(env, hostname) {
+  const h = sanitizeHostname(hostname);
+  if (!h) return null;
+  const r = await env.BUCKET.get("hostnames/" + h + ".json");
+  if (!r) return null;
+  try { return JSON.parse(await r.text()); } catch { return null; }
+}
+
+async function resolveCustomHostnameRoute(env, host, pathname) {
+  // Skip our primary worker host so the dashboard / setup / etc keep routing normally
+  if (host.endsWith(".workers.dev")) return null;
+  const mapping = await readHostnameMapping(env, host);
+  if (!mapping || !mapping.client) return null;
+  // Don't intercept admin/dashboard paths even on custom hostnames
+  if (pathname.startsWith("/config") || pathname.startsWith("/admin") ||
+      pathname.startsWith("/setup") || pathname.startsWith("/r/")) return null;
+  const slug = pathname.replace(/^\/+|\/+$/g, "");
+  const course = slug ? slug.split("/")[0] : (mapping.defaultCourse || "general");
+  const safeCourse = sanitizeSlug(course);
+  return { client: sanitizeSlug(mapping.client), course: safeCourse };
+}
+
+async function handleCustomDomainRegister(request, env) {
+  const { password, client, hostname } = await request.json().catch(() => ({}));
+  const adminPw = await getCred(env, "ADMIN_PASSWORD");
+  if (!adminPw || password !== adminPw) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401, headers: { "Content-Type": "application/json" }
+    });
+  }
+  const cfToken = await getCred(env, "CF_API_TOKEN");
+  const cfZone = await getCred(env, "CF_ZONE_ID");
+  const cfFallback = await getCred(env, "CF_FALLBACK_ORIGIN");
+  if (!cfToken || !cfZone || !cfFallback) {
+    return new Response(JSON.stringify({
+      error: "not_configured",
+      message: "Custom domains via Cloudflare for SaaS aren't configured on this worker yet. Use the iframe embed in the meantime."
+    }), { status: 503, headers: { "Content-Type": "application/json" } });
+  }
+  const h = sanitizeHostname(hostname);
+  if (!isValidHostname(h)) {
+    return new Response(JSON.stringify({ error: "invalid_hostname" }), {
+      status: 400, headers: { "Content-Type": "application/json" }
+    });
+  }
+  if (!client) {
+    return new Response(JSON.stringify({ error: "client_required" }), {
+      status: 400, headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // Register with Cloudflare
+  const cfRes = await fetch(`https://api.cloudflare.com/client/v4/zones/${cfZone}/custom_hostnames`, {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + cfToken,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      hostname: h,
+      ssl: { method: "http", type: "dv", settings: { min_tls_version: "1.2" } }
+    })
+  });
+  const cfData = await cfRes.json().catch(() => ({}));
+  if (!cfRes.ok || !cfData.success) {
+    return new Response(JSON.stringify({
+      error: "cloudflare_api_error",
+      details: cfData.errors || cfData
+    }), { status: 502, headers: { "Content-Type": "application/json" } });
+  }
+
+  const mapping = {
+    hostname: h,
+    client: sanitizeSlug(client),
+    cf_id: cfData.result.id,
+    status: cfData.result.status || "pending",
+    ssl_status: cfData.result.ssl?.status || "pending_validation",
+    cname_target: cfFallback,
+    created_at: new Date().toISOString()
+  };
+  await env.BUCKET.put("hostnames/" + h + ".json", JSON.stringify(mapping, null, 2), {
+    httpMetadata: { contentType: "application/json" }
+  });
+
+  return new Response(JSON.stringify({
+    ok: true,
+    hostname: h,
+    cname_target: cfFallback,
+    cf_id: cfData.result.id,
+    status: mapping.status,
+    ssl_status: mapping.ssl_status
+  }), { status: 200, headers: { "Content-Type": "application/json" } });
+}
+
+async function handleCustomDomainStatus(request, env) {
+  const { password, hostname } = await request.json().catch(() => ({}));
+  const adminPw = await getCred(env, "ADMIN_PASSWORD");
+  if (!adminPw || password !== adminPw) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401, headers: { "Content-Type": "application/json" }
+    });
+  }
+  const cfToken = await getCred(env, "CF_API_TOKEN");
+  const cfZone = await getCred(env, "CF_ZONE_ID");
+  if (!cfToken || !cfZone) {
+    return new Response(JSON.stringify({ error: "not_configured" }), {
+      status: 503, headers: { "Content-Type": "application/json" }
+    });
+  }
+  const h = sanitizeHostname(hostname);
+  const mapping = await readHostnameMapping(env, h);
+  if (!mapping) {
+    return new Response(JSON.stringify({ error: "not_found" }), {
+      status: 404, headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const cfRes = await fetch(`https://api.cloudflare.com/client/v4/zones/${cfZone}/custom_hostnames/${mapping.cf_id}`, {
+    headers: { "Authorization": "Bearer " + cfToken }
+  });
+  const cfData = await cfRes.json().catch(() => ({}));
+  if (!cfRes.ok || !cfData.success) {
+    return new Response(JSON.stringify({
+      hostname: h,
+      status: mapping.status,
+      ssl_status: mapping.ssl_status,
+      cname_target: mapping.cname_target,
+      cloudflare_error: true
+    }), { status: 200, headers: { "Content-Type": "application/json" } });
+  }
+
+  mapping.status = cfData.result.status || mapping.status;
+  mapping.ssl_status = cfData.result.ssl?.status || mapping.ssl_status;
+  mapping.last_checked = new Date().toISOString();
+  await env.BUCKET.put("hostnames/" + h + ".json", JSON.stringify(mapping, null, 2), {
+    httpMetadata: { contentType: "application/json" }
+  });
+
+  return new Response(JSON.stringify({
+    hostname: mapping.hostname,
+    client: mapping.client,
+    status: mapping.status,
+    ssl_status: mapping.ssl_status,
+    cname_target: mapping.cname_target,
+    last_checked: mapping.last_checked
+  }), { status: 200, headers: { "Content-Type": "application/json" } });
+}
+
+async function handleCustomDomainDelete(request, env) {
+  const { password, hostname } = await request.json().catch(() => ({}));
+  const adminPw = await getCred(env, "ADMIN_PASSWORD");
+  if (!adminPw || password !== adminPw) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401, headers: { "Content-Type": "application/json" }
+    });
+  }
+  const cfToken = await getCred(env, "CF_API_TOKEN");
+  const cfZone = await getCred(env, "CF_ZONE_ID");
+  const h = sanitizeHostname(hostname);
+  const mapping = await readHostnameMapping(env, h);
+  if (!mapping) {
+    return new Response(JSON.stringify({ error: "not_found" }), {
+      status: 404, headers: { "Content-Type": "application/json" }
+    });
+  }
+  // Best-effort: delete on Cloudflare side too
+  if (cfToken && cfZone && mapping.cf_id) {
+    await fetch(`https://api.cloudflare.com/client/v4/zones/${cfZone}/custom_hostnames/${mapping.cf_id}`, {
+      method: "DELETE",
+      headers: { "Authorization": "Bearer " + cfToken }
+    }).catch(() => {});
+  }
+  await env.BUCKET.delete("hostnames/" + h + ".json");
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200, headers: { "Content-Type": "application/json" }
   });
 }
 
@@ -1641,32 +1858,15 @@ const CONFIG_HTML = `<!DOCTYPE html>
 
       <div class="section">
         <h2>Pretty share URL (optional)</h2>
-        <p class="help-text" style="margin: 0 0 12px;">Most people don't need this. The <strong>iframe embed</strong> on the Branding tab already lets you use your own domain — just paste it into a page on your site (any platform, any domain) and the URL bar shows your domain naturally.</p>
-        <p class="help-text" style="margin: 0 0 12px;">Only set this up if you want the <em>standalone shareable link</em> (the one you'd paste in an email or SMS) to be on your domain instead of the long <code>*.workers.dev</code> one.</p>
-        <div class="field">
-          <label>Custom domain (without https://)</label>
-          <input type="text" data-key="customDomain" placeholder="recorder.yourdomain.com">
+        <p class="help-text" style="margin: 0 0 12px;">Most people don't need this. The <strong>iframe embed</strong> on the Branding tab already shows your own domain naturally — paste into any page on your site, no DNS work needed.</p>
+        <p class="help-text" style="margin: 0 0 14px;">Only set this up if you want the <em>standalone shareable link</em> on your domain. Works with any DNS provider (GoDaddy, Namecheap, your existing setup) — keep your DNS where it is and just add ONE CNAME record.</p>
+
+        <div id="customDomainCard" style="background:white; border:1px solid #e5e0d6; border-radius:8px; padding:16px;">
+          <!-- Populated by JS based on current registration state -->
+          <p style="color:#6b6b6b; font-size:13px; margin:0;">Loading…</p>
         </div>
-        <details style="margin-top:10px;">
-          <summary style="cursor:pointer; color:#a88840; font-size:13px; font-weight:600;">▸ How to set this up (Cloudflare DNS path, ~3 min)</summary>
-          <div style="margin-top:10px; padding:14px; background:#fdfbf6; border-left:3px solid #c9a961; border-radius:4px; line-height:1.6; font-size:13px; color:#1a1a1a;">
-            <p style="margin:0 0 8px;">This path requires your domain to be using Cloudflare for DNS. If it's not, you can either:</p>
-            <ul style="margin:0 0 12px; padding-left:22px;">
-              <li>Migrate the domain's nameservers to Cloudflare (free, takes ~5 min)</li>
-              <li>Or skip this and use the iframe embed instead — works on any domain, no DNS work</li>
-            </ul>
-            <p style="margin:0 0 6px;"><strong>Cloudflare DNS setup:</strong></p>
-            <ol style="margin:0; padding-left:22px;">
-              <li>Cloudflare → <strong>Workers &amp; Pages</strong> → click your worker (e.g. <code>stokereel</code>)</li>
-              <li><strong>Settings</strong> → <strong>Domains &amp; Routes</strong></li>
-              <li><strong>+ Add</strong> → <strong>Custom Domain</strong></li>
-              <li>Enter <code>recorder.yourdomain.com</code> → Add</li>
-              <li>Wait ~60 sec for SSL provisioning</li>
-              <li>Paste the same domain above and Save</li>
-            </ol>
-            <p style="margin:10px 0 0;"><strong>External DNS (Cloudflare for SaaS):</strong> If you can't move DNS to Cloudflare, this is doable but more involved — let me know and I'll add an automated flow.</p>
-          </div>
-        </details>
+
+        <input type="hidden" data-key="customDomain">
       </div>
 
       <div class="sub-panel-actions">
@@ -1830,6 +2030,129 @@ function renderTemplates() {
   grid.querySelectorAll("[data-template-id]").forEach(btn => {
     btn.addEventListener("click", () => applyTemplate(btn.getAttribute("data-template-id")));
   });
+}
+
+async function renderCustomDomainCard() {
+  const card = document.getElementById("customDomainCard");
+  if (!card) return;
+  const customDomain = (currentConfig && currentConfig.customDomain || "").trim();
+  if (!customDomain) {
+    card.innerHTML =
+      '<label style="display:block; font-size:13px; color:#1a1a1a; font-weight:600; margin-bottom:6px;">Add a custom domain</label>' +
+      '<p style="font-size:12px; color:#6b6b6b; margin:0 0 8px;">e.g. <code>recorder.yourdomain.com</code></p>' +
+      '<div style="display:flex; gap:8px; flex-wrap:wrap;">' +
+      '<input type="text" id="customDomainInput" placeholder="recorder.yourdomain.com" style="flex:1; min-width:240px; padding:9px 12px; border:1px solid #e5e0d6; border-radius:6px; font-size:14px;">' +
+      '<button onclick="registerCustomDomain()">Register domain</button>' +
+      '</div>' +
+      '<p style="font-size:12px; color:#6b6b6b; margin:10px 0 0;">After clicking Register, you\\u2019ll get a CNAME record to add at your DNS provider. Cloudflare auto-issues SSL once you add it.</p>';
+    return;
+  }
+  // Already have a custom domain set — show its status
+  card.innerHTML = '<p style="color:#6b6b6b; font-size:13px; margin:0;">Checking status of <strong>' + escapeHtml(customDomain) + '</strong>…</p>';
+  await refreshCustomDomainStatus(customDomain);
+}
+
+async function registerCustomDomain() {
+  const input = document.getElementById("customDomainInput");
+  const hostname = (input && input.value || "").trim();
+  if (!hostname) { toast("Enter a domain first."); return; }
+  const pw = localStorage.getItem(STORAGE_KEY);
+  const clientRaw = document.getElementById("clientName").value;
+  const client = clientRaw && clientRaw !== NEW_OPTION ? clientRaw : "";
+  if (!client) { toast("Pick a client first."); return; }
+  const card = document.getElementById("customDomainCard");
+  card.innerHTML = '<p style="color:#6b6b6b; font-size:13px; margin:0;">Registering…</p>';
+  try {
+    const res = await fetch("/admin/custom-domain/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw, client, hostname })
+    });
+    const data = await res.json();
+    if (res.status === 503) {
+      card.innerHTML =
+        '<div style="padding:14px; background:#fdf0ed; border:1px solid #b84a3a; border-radius:6px; font-size:13px; color:#1a1a1a; line-height:1.6;">' +
+        '<strong>Custom domains aren\\u2019t enabled on this worker yet.</strong>' +
+        '<p style="margin:6px 0 0;">The owner needs to set up Cloudflare for SaaS one time before this feature works. In the meantime, use the <strong>iframe embed</strong> on the Branding tab \\u2014 it gives you the same outcome (your domain in the URL bar) with zero DNS setup.</p>' +
+        '</div>';
+      return;
+    }
+    if (!res.ok) throw new Error(data.error || ("Register failed: " + res.status));
+    if (currentConfig) currentConfig.customDomain = data.hostname;
+    const hiddenInput = document.querySelector('input[type="hidden"][data-key="customDomain"]');
+    if (hiddenInput) hiddenInput.value = data.hostname;
+    await save();
+    await refreshCustomDomainStatus(data.hostname);
+  } catch (err) {
+    card.innerHTML =
+      '<div style="padding:12px; background:#fdf0ed; color:#b84a3a; border-radius:6px; font-size:13px;">Error: ' + escapeHtml(err.message) + '</div>' +
+      '<button onclick="renderCustomDomainCard()" class="secondary" style="margin-top:10px;">Try again</button>';
+  }
+}
+
+async function refreshCustomDomainStatus(hostname) {
+  const pw = localStorage.getItem(STORAGE_KEY);
+  const card = document.getElementById("customDomainCard");
+  try {
+    const res = await fetch("/admin/custom-domain/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw, hostname })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || ("Status check failed: " + res.status));
+
+    const ok = data.status === "active" && data.ssl_status === "active";
+    const cnameInstructions =
+      '<div style="margin-top:12px; padding:14px; background:#fdfbf6; border:1px solid #c9a961; border-radius:6px; line-height:1.6; font-size:13px;">' +
+      '<strong>Add this CNAME record at your DNS provider</strong> (GoDaddy, Namecheap, wherever your domain lives):' +
+      '<table style="width:100%; margin-top:8px; font-family:monospace; font-size:12px; border-collapse:collapse;">' +
+      '<tr><td style="padding:4px 6px; color:#6b6b6b;">Type</td><td style="padding:4px 6px;">CNAME</td></tr>' +
+      '<tr><td style="padding:4px 6px; color:#6b6b6b;">Name / Host</td><td style="padding:4px 6px;">' + escapeHtml(hostname.split(".")[0]) + '</td></tr>' +
+      '<tr><td style="padding:4px 6px; color:#6b6b6b;">Target / Value</td><td style="padding:4px 6px;">' + escapeHtml(data.cname_target || "") + '</td></tr>' +
+      '<tr><td style="padding:4px 6px; color:#6b6b6b;">TTL</td><td style="padding:4px 6px;">Auto / 300</td></tr>' +
+      '</table>' +
+      '<p style="margin:10px 0 0; color:#6b6b6b; font-size:12px;">Once added, Cloudflare auto-issues SSL within ~5 minutes. Click <em>Refresh status</em> below to check.</p>' +
+      '</div>';
+
+    const statusBadge = ok
+      ? '<span style="display:inline-block; padding:3px 10px; border-radius:999px; background:#dcfce7; color:#166534; font-size:11px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase;">\\u2713 Active</span>'
+      : '<span style="display:inline-block; padding:3px 10px; border-radius:999px; background:#fef3c7; color:#78350f; font-size:11px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase;">\\u23F3 Pending</span>';
+
+    card.innerHTML =
+      '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">' +
+      '<strong style="font-family:monospace; font-size:14px;">' + escapeHtml(hostname) + '</strong>' +
+      statusBadge +
+      '<div style="margin-left:auto; display:flex; gap:6px;">' +
+      '<button class="secondary" onclick="refreshCustomDomainStatus(\\'' + escapeAttr(hostname) + '\\')" style="padding:6px 12px; font-size:12px;">Refresh status</button>' +
+      '<button class="secondary" onclick="deleteCustomDomain(\\'' + escapeAttr(hostname) + '\\')" style="padding:6px 12px; font-size:12px; color:#b84a3a; border-color:#b84a3a;">Remove</button>' +
+      '</div>' +
+      '</div>' +
+      '<p style="margin:8px 0 0; font-size:12px; color:#6b6b6b;">Hostname: <code>' + escapeHtml(data.status || "?") + '</code> &middot; SSL: <code>' + escapeHtml(data.ssl_status || "?") + '</code></p>' +
+      (ok ? '<p style="margin:10px 0 0; padding:10px 12px; background:#dcfce7; color:#166534; border-radius:6px; font-size:13px;">\\u2713 Live. Your share URLs now use <strong>' + escapeHtml(hostname) + '</strong>. Send students <code>https://' + escapeHtml(hostname) + '/&lt;funnel&gt;</code>.</p>' : cnameInstructions);
+  } catch (err) {
+    card.innerHTML = '<div style="padding:12px; background:#fdf0ed; color:#b84a3a; border-radius:6px; font-size:13px;">Status check failed: ' + escapeHtml(err.message) + '</div>';
+  }
+}
+
+async function deleteCustomDomain(hostname) {
+  if (!confirm("Remove " + hostname + " from this client? You'll need to re-register if you want to use it again.")) return;
+  const pw = localStorage.getItem(STORAGE_KEY);
+  try {
+    await fetch("/admin/custom-domain/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw, hostname })
+    });
+    if (currentConfig) currentConfig.customDomain = "";
+    const hiddenInput = document.querySelector('input[type="hidden"][data-key="customDomain"]');
+    if (hiddenInput) hiddenInput.value = "";
+    await save();
+    renderCustomDomainCard();
+    toast("Custom domain removed.");
+  } catch (err) {
+    toast("Error: " + err.message);
+  }
 }
 
 function refreshLogoPreview() {
@@ -2307,8 +2630,10 @@ function updateShareBox() {
   if (rawDomain.indexOf("https://") === 0) rawDomain = rawDomain.slice(8);
   else if (rawDomain.indexOf("http://") === 0) rawDomain = rawDomain.slice(7);
   while (rawDomain.endsWith("/")) rawDomain = rawDomain.slice(0, -1);
-  const baseUrl = rawDomain ? "https://" + rawDomain : window.location.origin;
-  const url = baseUrl + "/r/" + encodeURIComponent(client) + "/" + encodeURIComponent(course);
+  // Custom-domain URLs use a clean /<funnel> path; default workers.dev uses /r/<client>/<funnel>
+  const url = rawDomain
+    ? "https://" + rawDomain + "/" + encodeURIComponent(course)
+    : window.location.origin + "/r/" + encodeURIComponent(client) + "/" + encodeURIComponent(course);
   document.getElementById("shareUrl").value = url;
   document.getElementById("shareIframe").value =
     '<iframe src="' + url + '" allow="camera; microphone" style="width:100%;min-height:90vh;border:0;display:block;"></iframe>';
@@ -2411,6 +2736,7 @@ function populateForm(config) {
   }
   renderQuestions();
   refreshLogoPreview();
+  renderCustomDomainCard();
 }
 
 function renderQuestions() {
