@@ -1292,6 +1292,13 @@ const CONFIG_HTML = `<!DOCTYPE html>
     font-size: 13px; color: #6b6b6b; margin: 0 0 16px; padding: 10px 14px;
     background: #fdfbf6; border-left: 3px solid #c9a961; border-radius: 4px;
   }
+  .sub-panel-actions {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    margin-top: 28px; padding-top: 20px; border-top: 1px solid #e5e0d6;
+  }
+  .sub-panel-actions .hint {
+    font-size: 12px; color: #6b6b6b; margin-left: auto;
+  }
   .submissions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
   .sub-card { background: white; border: 1px solid #e5e0d6; border-radius: 8px; overflow: hidden; }
   .sub-card video { width: 100%; height: 220px; object-fit: cover; background: #000; display: block; }
@@ -1431,6 +1438,11 @@ const CONFIG_HTML = `<!DOCTYPE html>
         </div>
       </div>
 
+      <div class="sub-panel-actions">
+        <button onclick="save()">💾 Save changes</button>
+        <button onclick="saveAndPreview()" class="secondary">👁 Save & preview live</button>
+        <span class="hint">Changes apply within 30 seconds</span>
+      </div>
       </div><!-- /sub-panel style -->
 
       <div class="sub-panel" data-sub="welcome">
@@ -1441,6 +1453,11 @@ const CONFIG_HTML = `<!DOCTYPE html>
         <div class="field"><label>Subheadline</label><textarea data-key="subheadline" rows="3"></textarea></div>
         <div class="field"><label>Intro CTA button label</label><input type="text" data-key="getStartedLabel" placeholder="Get started"><div class="field-preview" data-preview-for="getStartedLabel"></div></div>
         <div class="preview-block" id="previewWelcome"></div>
+      </div>
+      <div class="sub-panel-actions">
+        <button onclick="save()">💾 Save changes</button>
+        <button onclick="saveAndPreview()" class="secondary">👁 Save & preview live</button>
+        <span class="hint">Changes apply within 30 seconds</span>
       </div>
       </div><!-- /sub-panel welcome -->
 
@@ -1454,6 +1471,11 @@ const CONFIG_HTML = `<!DOCTYPE html>
         <div class="field"><label>Redirect button label (leave blank to hide)</label><input type="text" data-key="thankYouButtonLabel" placeholder="Download your gift"><div class="field-preview" data-preview-for="thankYouButtonLabel"></div></div>
         <div class="field"><label>Redirect button URL</label><input type="text" data-key="thankYouButtonUrl" placeholder="https://yoursite.com/free-gift"></div>
         <div class="preview-block" id="previewThankYou"></div>
+      </div>
+      <div class="sub-panel-actions">
+        <button onclick="save()">💾 Save changes</button>
+        <button onclick="saveAndPreview()" class="secondary">👁 Save & preview live</button>
+        <span class="hint">Changes apply within 30 seconds</span>
       </div>
       </div><!-- /sub-panel thankyou -->
 
@@ -1471,6 +1493,11 @@ const CONFIG_HTML = `<!DOCTYPE html>
         <div class="field"><label>"Type instead" link</label><input type="text" data-key="typeInsteadLabel" placeholder="Prefer to type instead? Click here."><div class="field-preview" data-preview-for="typeInsteadLabel"></div></div>
         <div class="field"><label>"Switch back to video" link</label><input type="text" data-key="switchToVideoLabel" placeholder="Switch to video instead"><div class="field-preview" data-preview-for="switchToVideoLabel"></div></div>
       </div>
+      <div class="sub-panel-actions">
+        <button onclick="save()">💾 Save changes</button>
+        <button onclick="saveAndPreview()" class="secondary">👁 Save & preview live</button>
+        <span class="hint">Changes apply within 30 seconds</span>
+      </div>
       </div><!-- /sub-panel buttons -->
 
       <div class="sub-panel" data-sub="questions">
@@ -1479,6 +1506,11 @@ const CONFIG_HTML = `<!DOCTYPE html>
         <h2>Questions</h2>
         <div id="questionsContainer"></div>
         <div class="preview-block" id="previewQuestions"></div>
+      </div>
+      <div class="sub-panel-actions">
+        <button onclick="save()">💾 Save changes</button>
+        <button onclick="saveAndPreview()" class="secondary">👁 Save & preview live</button>
+        <span class="hint">Changes apply within 30 seconds</span>
       </div>
       </div><!-- /sub-panel questions -->
 
@@ -1502,6 +1534,11 @@ const CONFIG_HTML = `<!DOCTYPE html>
         <h2>Notifications</h2>
         <p class="help-text" style="margin: 0 0 12px;">Get pinged on Slack, Discord, Zapier, or any webhook each time a testimonial lands.</p>
         <div class="field"><label>Webhook URL (optional)</label><input type="text" data-key="notifyWebhookUrl" placeholder="https://hooks.slack.com/services/..."></div>
+      </div>
+      <div class="sub-panel-actions">
+        <button onclick="save()">💾 Save changes</button>
+        <button onclick="saveAndPreview()" class="secondary">👁 Save & preview live</button>
+        <span class="hint">Changes apply within 30 seconds</span>
       </div>
       </div><!-- /sub-panel settings -->
 
@@ -2291,6 +2328,18 @@ function switchSubTab(name) {
   document.querySelectorAll(".sub-panel").forEach(p => p.classList.toggle("active", p.dataset.sub === name));
   // Scroll to top so customer immediately sees the section + its preview
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function saveAndPreview() {
+  const clientRaw = document.getElementById("clientName").value;
+  const courseRaw = document.getElementById("courseName").value;
+  const client = clientRaw && clientRaw !== NEW_OPTION ? clientRaw : "";
+  const course = courseRaw && courseRaw !== NEW_OPTION ? courseRaw : "preview";
+  if (!client) { toast("Pick a client first."); return; }
+  await save();
+  // Open the live recorder in a new tab so the user sees their saved changes in context
+  const url = "/r/" + encodeURIComponent(client) + "/" + encodeURIComponent(course);
+  window.open(url, "_blank");
 }
 
 let featuredKeysByClient = {};
