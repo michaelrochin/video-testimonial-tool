@@ -32,7 +32,7 @@ import LANDING_HTML from "./landing.html";
 // this against UPSTREAM_VERSION_URL to detect when an update is available.
 // Use semantic versioning (MAJOR.MINOR.PATCH).
 // --------------------------------------------------------------
-const STOKEREEL_VERSION = "1.4.5";
+const STOKEREEL_VERSION = "1.4.6";
 const UPSTREAM_VERSION_URL = "https://testimonials.michaelrochin.workers.dev/version";
 
 // --------------------------------------------------------------
@@ -3352,6 +3352,64 @@ const CONFIG_HTML = `<!DOCTYPE html>
   }
   .share-input-row input:focus,
   .share-input-row textarea:focus { background: var(--d-bg-4) !important; border-color: var(--d-warm) !important; }
+  /* Branded-redirect "How to" collapsible — dark themed, monospace caps summary */
+  .share-howto {
+    margin-top: 14px;
+    border-top: 1px dashed var(--d-border) !important;
+    padding-top: 12px;
+  }
+  .share-howto summary {
+    cursor: pointer;
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--d-muted) !important;
+    user-select: none;
+  }
+  .share-howto summary::-webkit-details-marker { display: none; }
+  .share-howto summary::before {
+    content: "+";
+    width: 16px; height: 16px;
+    border: 1px solid var(--d-border-strong);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 11px;
+    line-height: 1;
+    color: var(--d-ink-2);
+    transition: transform 0.18s;
+  }
+  .share-howto[open] summary::before { content: "−"; }
+  .share-howto summary:hover { color: var(--d-ink) !important; }
+  .share-howto ul {
+    margin: 12px 0 4px;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+  }
+  .share-howto ul li {
+    padding-left: 14px;
+    position: relative;
+    font-size: 13px;
+    color: var(--d-ink-2) !important;
+    line-height: 1.55;
+  }
+  .share-howto ul li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 10px;
+    width: 6px; height: 1px;
+    background: var(--d-warm);
+  }
+  .share-howto ul li strong { color: var(--d-ink) !important; }
   .email-subject-line, .email-body-line {
     background: var(--d-bg-3) !important;
     border-color: var(--d-border) !important;
@@ -4585,22 +4643,47 @@ P.S. If you started recording one and got self-conscious and closed the tab — 
             </div>
           </div>
 
-          <!-- Option 2: Simple one-line embed -->
+          <!-- Option 2: Branded redirect (NEW) — keep your domain, no iframe -->
           <div class="share-card">
             <div class="share-card-head">
-              <strong>Option 2 · Simple embed</strong>
+              <span class="share-badge">Recommended for sites</span>
+              <strong>Option 2 · Branded redirect</strong>
+              <span class="share-tag">Keep your domain</span>
             </div>
-            <p class="share-desc">One-line iframe. Works on blank pages, landing-page templates, custom HTML pages. If your site has a header/footer that bleeds through, use Option 3 instead.</p>
+            <p class="share-desc">Want visitors to see <em>yoursite.com/testimonials</em> instead of the Stokereel URL? Paste this single line into a new page on your site. When someone visits, they're instantly redirected to your full-screen recorder. No iframe, no styling conflicts, no scrollbars.</p>
+            <div class="share-input-row">
+              <input id="shareRedirect" type="text" readonly>
+              <button onclick="copyShare('shareRedirect', this)" class="secondary">Copy</button>
+            </div>
+            <details class="share-howto">
+              <summary>How to add this to your site</summary>
+              <ul>
+                <li><strong>WordPress:</strong> New Page → switch to <em>Code editor</em> view → paste → publish.</li>
+                <li><strong>Kajabi:</strong> Pages → New Page → add a <em>Custom Code</em> block → paste → save.</li>
+                <li><strong>Squarespace:</strong> Pages → add a <em>Code Block</em> to a blank page → paste.</li>
+                <li><strong>Wix / Webflow:</strong> Add an <em>Embed HTML</em> / <em>Custom Code</em> element on a blank page.</li>
+                <li><strong>ClickFunnels:</strong> Add a <em>Custom HTML</em> element to a blank funnel step.</li>
+                <li><strong>Carrd:</strong> Add an <em>Embed</em> element with this snippet on a blank page.</li>
+              </ul>
+            </details>
+          </div>
+
+          <!-- Option 3: Simple one-line embed -->
+          <div class="share-card">
+            <div class="share-card-head">
+              <strong>Option 3 · Simple embed</strong>
+            </div>
+            <p class="share-desc">One-line iframe. Works on blank pages, landing-page templates, custom HTML pages. If your site has a header/footer that bleeds through, use Option 2 (redirect) or Option 4 (aggressive embed) instead.</p>
             <div class="share-input-row">
               <input id="shareIframe" type="text" readonly>
               <button onclick="copyShare('shareIframe', this)" class="secondary">Copy</button>
             </div>
           </div>
 
-          <!-- Option 3: Aggressive full-page-takeover embed -->
+          <!-- Option 4: Aggressive full-page-takeover embed -->
           <div class="share-card">
             <div class="share-card-head">
-              <strong>Option 3 · Aggressive embed</strong>
+              <strong>Option 4 · Aggressive embed</strong>
               <span class="share-tag">Full-page takeover</span>
             </div>
             <p class="share-desc">For sites with headers, footers, or themes that interfere. This snippet hides all other page content and gives the recorder full-screen. Best on a dedicated "testimonials" page on your site.</p>
@@ -5681,8 +5764,13 @@ function updateShareBox() {
     ? "https://" + rawDomain + "/" + encodeURIComponent(course)
     : window.location.origin + "/r/" + encodeURIComponent(client) + "/" + encodeURIComponent(course);
   document.getElementById("shareUrl").value = url;
-  // Option 2 — one-line, zero-config embed. The recorder owns its own
-  // background, sizing, and overflow, so the host page only has to
+  // Option 2 — branded redirect. Buyer pastes this into a page on their
+  // own domain (e.g. yoursite.com/testimonials) and visitors get bounced
+  // to the recorder. No iframe = no styling conflicts on themed sites.
+  const redirectEl = document.getElementById("shareRedirect");
+  if (redirectEl) redirectEl.value = '<meta http-equiv="refresh" content="0; url=' + url + '">';
+  // Option 3 — one-line, zero-config iframe embed. The recorder owns its
+  // own background, sizing, and overflow, so the host page only has to
   // provide a slot.
   document.getElementById("shareIframe").value =
     '<iframe src="' + url + '" allow="camera; microphone" style="width:100%;height:100vh;border:0;display:block;" title="Share your story"></iframe>';
