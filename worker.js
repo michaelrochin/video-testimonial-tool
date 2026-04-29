@@ -1119,7 +1119,7 @@ async function serveShortlink(env, origin, code) {
 }
 
 async function handleShortlinkCreate(request, env) {
-  const { password, client, course, preferredHost } = await request.json().catch(() => ({}));
+  const { password, client, course, preferredHost, force } = await request.json().catch(() => ({}));
   const adminPw = await getCred(env, "ADMIN_PASSWORD");
   if (!adminPw || password !== adminPw) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
@@ -1156,19 +1156,32 @@ async function handleShortlinkCreate(request, env) {
     return reqOrigin;
   }
 
-  // Re-use existing short link for this funnel if one already exists
+  // Re-use existing short link for this funnel unless caller asked for a fresh one
   const reverseKey = "shortlinks-by-funnel/" + c + "__" + co + ".json";
-  const existing = await env.BUCKET.get(reverseKey);
-  if (existing) {
-    try {
-      const reverseData = JSON.parse(await existing.text());
-      if (reverseData.code) {
-        const fullUrl = pickHost() + "/s/" + reverseData.code;
-        return new Response(JSON.stringify({ code: reverseData.code, client: c, course: co, full_url: fullUrl, reused: true }), {
-          status: 200, headers: { "Content-Type": "application/json" }
-        });
-      }
-    } catch {}
+  if (!force) {
+    const existing = await env.BUCKET.get(reverseKey);
+    if (existing) {
+      try {
+        const reverseData = JSON.parse(await existing.text());
+        if (reverseData.code) {
+          const fullUrl = pickHost() + "/s/" + reverseData.code;
+          return new Response(JSON.stringify({ code: reverseData.code, client: c, course: co, full_url: fullUrl, reused: true }), {
+            status: 200, headers: { "Content-Type": "application/json" }
+          });
+        }
+      } catch {}
+    }
+  } else {
+    // Force regenerate: invalidate the existing code mapping
+    const existing = await env.BUCKET.get(reverseKey);
+    if (existing) {
+      try {
+        const reverseData = JSON.parse(await existing.text());
+        if (reverseData.code) {
+          await env.BUCKET.delete("shortlinks/" + reverseData.code + ".json");
+        }
+      } catch {}
+    }
   }
 
   // Generate a new collision-free code
@@ -1782,11 +1795,11 @@ const CONFIG_HTML = `<!DOCTYPE html>
       </div>
       <div>
         <label style="display:block; font-size:12px; color:#1a1a1a; margin-bottom:4px; font-weight:600;">Option 3 — Short link (compact, easy to remember)</label>
-        <p style="font-size: 12px; color: #6b6b6b; margin: 0 0 6px;">Tiny URL that redirects to this funnel. Great for printed materials, SMS, or anywhere character count matters.</p>
+        <p style="font-size: 12px; color: #6b6b6b; margin: 0 0 6px;">Tiny URL that redirects to this funnel. Auto-generated and persistent — same short link every time.</p>
         <div style="display:flex; gap:6px; align-items:center;">
-          <input id="shareShort" type="text" readonly placeholder="Click 'Generate' to create a short link" style="flex:1; padding:8px 10px; border:1px solid #e5e0d6; border-radius:4px; font-family:monospace; font-size:12px; background:white;">
-          <button onclick="generateShortLink()" id="shortLinkBtn" class="secondary" style="white-space:nowrap;">Generate</button>
-          <button onclick="copyShare('shareShort', this)" class="secondary" style="white-space:nowrap; display:none;" id="shortLinkCopyBtn">Copy</button>
+          <input id="shareShort" type="text" readonly placeholder="Loading…" style="flex:1; padding:8px 10px; border:1px solid #e5e0d6; border-radius:4px; font-family:monospace; font-size:12px; background:white;">
+          <button onclick="copyShare('shareShort', this)" class="secondary" style="white-space:nowrap;">Copy</button>
+          <button onclick="regenerateShortLink()" id="shortLinkBtn" class="secondary" style="white-space:nowrap; padding:8px 10px; font-size:12px;" title="Generate a new short code (invalidates the old one)">↻</button>
         </div>
       </div>
     </div>
@@ -2759,41 +2772,43 @@ function updateShareBox() {
     '<iframe src="' + url + '" allow="camera; microphone" style="width:100%;min-height:90vh;border:0;display:block;"></iframe>';
   document.getElementById("shareLabel").textContent = client + " / " + course;
   box.style.display = "block";
+  // Auto-load (or create) the short link for this funnel
+  loadShortLink();
 }
 
-async function generateShortLink() {
+async function loadShortLink(opts) {
+  const force = opts && opts.force;
   const pw = localStorage.getItem(STORAGE_KEY);
   const clientRaw = document.getElementById("clientName").value;
   const courseRaw = document.getElementById("courseName").value;
   const client = clientRaw && clientRaw !== NEW_OPTION ? clientRaw : "";
   const course = courseRaw && courseRaw !== NEW_OPTION ? courseRaw : "";
-  if (!client || !course) { toast("Pick a client AND funnel first."); return; }
-  const btn = document.getElementById("shortLinkBtn");
   const input = document.getElementById("shareShort");
-  const copyBtn = document.getElementById("shortLinkCopyBtn");
-  // Pass the per-client custom domain if it's set; the worker also has BRAND_HOST as a fallback
+  if (!input) return;
+  if (!client || !course) { input.value = ""; input.placeholder = "Pick a client and funnel first"; return; }
   const domainInput = document.querySelector('input[data-key="customDomain"]');
   const preferredHost = (domainInput && domainInput.value || "").trim();
-  btn.disabled = true;
-  btn.textContent = "Generating…";
+  input.value = "";
+  input.placeholder = "Loading…";
   try {
     const res = await fetch("/admin/shortlink/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: pw, client, course, preferredHost })
+      body: JSON.stringify({ password: pw, client, course, preferredHost, force: !!force })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || ("Failed: " + res.status));
     input.value = data.full_url;
-    copyBtn.style.display = "inline-flex";
-    btn.textContent = "Regenerate";
-    btn.disabled = false;
-    toast(data.reused ? "Existing short link reused." : "Short link created!");
+    input.placeholder = "";
+    if (force) toast("New short link generated. Old one no longer works.");
   } catch (err) {
-    btn.textContent = "Generate";
-    btn.disabled = false;
-    toast("Error: " + err.message);
+    input.placeholder = "Couldn't load: " + err.message;
   }
+}
+
+async function regenerateShortLink() {
+  if (!confirm("Generate a fresh short link? The current one will stop working.")) return;
+  await loadShortLink({ force: true });
 }
 
 async function copyShare(inputId, btn) {
