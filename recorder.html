@@ -5,13 +5,16 @@
 -->
 <style>
   .vt-wrap {
-    --vt-cream: #faf7f2;
-    --vt-ink: #1a1a1a;
-    --vt-warm: #c9a961;
-    --vt-warm-dark: #a88840;
-    --vt-muted: #6b6b6b;
-    --vt-border: #e5e0d6;
-    --vt-error: #b84a3a;
+    /* Obsidian Studio defaults — per-client config overrides via JS */
+    --vt-cream: #080808;        /* recorder bg */
+    --vt-ink: #F0EEE9;          /* recorder text */
+    --vt-warm: #F5A623;         /* primary accent */
+    --vt-warm-dark: #D88E11;    /* primary hover */
+    --vt-muted: #6B6B7A;        /* muted text */
+    --vt-border: rgba(255,255,255,0.06);
+    --vt-error: #FF2D55;        /* record accent */
+    --vt-button-text: #1A0E00;  /* dark text on amber buttons */
+    --vt-surface: #0F0F12;      /* elevated surface */
     font-family: Georgia, "Times New Roman", serif;
     background: var(--vt-cream);
     color: var(--vt-ink);
@@ -21,7 +24,7 @@
     border-radius: 16px;
     border: 1px solid var(--vt-border);
     line-height: 1.6;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 12px 40px -8px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4), 0 12px 40px -8px rgba(0,0,0,0.5);
   }
   @media (max-width: 600px) {
     .vt-wrap { margin: 16px; padding: 32px 24px; border-radius: 12px; }
@@ -56,8 +59,8 @@
     border: 1px solid var(--vt-border);
     border-radius: 8px;
     font-size: 16px;
-    background: white;
-    color: #1a1a1a;
+    background: var(--vt-surface, white);
+    color: var(--vt-ink, #1a1a1a);
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     transition: border-color 0.15s, box-shadow 0.15s;
@@ -365,8 +368,8 @@
     border: 1px solid var(--vt-border);
     border-radius: 4px;
     font-size: 16px;
-    background: white;
-    color: #1a1a1a;
+    background: var(--vt-surface, white);
+    color: var(--vt-ink, #1a1a1a);
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     resize: vertical;
@@ -566,14 +569,14 @@
   // Fallback defaults — used if the config fetch fails (e.g. first ever load).
   // These are immediately overridden by whatever the dashboard has saved.
   const DEFAULTS = {
-    brandColor: "#c9a961",
-    brandColorDark: "#a88840",
-    buttonTextColor: "#ffffff",
-    backgroundColor: "#faf7f2",
-    textColor: "#1a1a1a",
-    mutedTextColor: "#6b6b6b",
-    borderColor: "#e5e0d6",
-    errorColor: "#b84a3a",
+    brandColor: "#F5A623",
+    brandColorDark: "#D88E11",
+    buttonTextColor: "#1A0E00",
+    backgroundColor: "#080808",
+    textColor: "#F0EEE9",
+    mutedTextColor: "#6B6B7A",
+    borderColor: "#1F1F23",
+    errorColor: "#FF2D55",
     headingFont: 'Georgia, "Times New Roman", serif',
     headingFontGoogleUrl: "",
     headline: "Share your story",
@@ -599,6 +602,8 @@
     buttonStyle: "rounded",
     recordButtonShape: "rounded",
     recordButtonPlacement: "above-video",
+    logoTreatment: "original",
+    logoTintColor: "",
     thankYouButtonLabel: "",
     thankYouButtonUrl: "",
     notifyWebhookUrl: "",
@@ -722,6 +727,17 @@
       wrap.style.setProperty("--vt-muted", cfg.mutedTextColor);
       wrap.style.setProperty("--vt-border", cfg.borderColor);
       wrap.style.setProperty("--vt-error", cfg.errorColor);
+      // Derive an "elevated surface" color for inputs/textareas based on bg luminance
+      // (light bg → white inputs; dark bg → slightly-lighter dark inputs).
+      try {
+        const bg = String(cfg.backgroundColor || "#080808").trim();
+        const isHex = /^#[0-9a-f]{6}$/i.test(bg);
+        if (isHex) {
+          const r = parseInt(bg.slice(1,3),16), g = parseInt(bg.slice(3,5),16), b = parseInt(bg.slice(5,7),16);
+          const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+          wrap.style.setProperty("--vt-surface", lum > 0.5 ? "#ffffff" : "#0F0F12");
+        }
+      } catch {}
       wrap.style.fontFamily = cfg.headingFont;
       // Button shape — rounded (pill-ish) or sharp
       const radiusMap = { rounded: "999px", sharp: "3px" };
@@ -774,12 +790,21 @@
     const switchToVideoEl = $("vtSwitchToVideo");
     if (switchToVideoEl) switchToVideoEl.parentElement.style.display = showVideoLink ? "" : "none";
 
-    // Logo on intro and thank-you screens
+    // Logo on intro and thank-you screens (with optional treatment)
     const logoIntro = $("vtLogoIntro");
     const logoDone = $("vtLogoDone");
+    const logoFilter = (function() {
+      const t = cfg.logoTreatment || "original";
+      if (t === "invert") return "invert(1)";
+      if (t === "tint") {
+        const tint = (cfg.logoTintColor && cfg.logoTintColor.trim()) || cfg.brandColor || "#F5A623";
+        return "brightness(0) saturate(100%) drop-shadow(0 0 0 " + tint + ")";
+      }
+      return "";
+    })();
     if (cfg.logoUrl) {
-      if (logoIntro) { logoIntro.src = cfg.logoUrl; logoIntro.style.display = "block"; }
-      if (logoDone) { logoDone.src = cfg.logoUrl; logoDone.style.display = "block"; }
+      if (logoIntro) { logoIntro.src = cfg.logoUrl; logoIntro.style.display = "block"; logoIntro.style.filter = logoFilter; }
+      if (logoDone) { logoDone.src = cfg.logoUrl; logoDone.style.display = "block"; logoDone.style.filter = logoFilter; }
     } else {
       if (logoIntro) logoIntro.style.display = "none";
       if (logoDone) logoDone.style.display = "none";

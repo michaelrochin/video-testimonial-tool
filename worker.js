@@ -32,7 +32,7 @@ import LANDING_HTML from "./landing.html";
 // this against UPSTREAM_VERSION_URL to detect when an update is available.
 // Use semantic versioning (MAJOR.MINOR.PATCH).
 // --------------------------------------------------------------
-const STOKEREEL_VERSION = "1.3.1";
+const STOKEREEL_VERSION = "1.4.0";
 const UPSTREAM_VERSION_URL = "https://testimonials.michaelrochin.workers.dev/version";
 
 // --------------------------------------------------------------
@@ -443,16 +443,18 @@ ${RECORDER_HTML}
 // /config endpoints — branding dashboard for buyers
 // --------------------------------------------------------------
 const DEFAULT_CONFIG = {
-  brandColor: "#c9a961",
-  brandColorDark: "#a88840",
-  buttonTextColor: "#ffffff",
-  backgroundColor: "#faf7f2",
-  textColor: "#1a1a1a",
-  mutedTextColor: "#6b6b6b",
-  borderColor: "#e5e0d6",
-  errorColor: "#b84a3a",
-  headingFont: 'Georgia, "Times New Roman", serif',
-  headingFontGoogleUrl: "",
+  brandColor: "#F5A623",
+  brandColorDark: "#D88E11",
+  buttonTextColor: "#1A0E00",
+  backgroundColor: "#080808",
+  textColor: "#F0EEE9",
+  mutedTextColor: "#6B6B7A",
+  borderColor: "#1F1F23",
+  errorColor: "#FF2D55",
+  logoTreatment: "original",
+  logoTintColor: "",
+  headingFont: '"Bebas Neue", "Syne", Georgia, serif',
+  headingFontGoogleUrl: "https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap",
   headline: "Share your story",
   subheadline: 'Three quick questions in one short video. Hit record, answer them one after another, tap "Next question" as you go.',
   thankYouHeader: "Thank you.",
@@ -937,8 +939,8 @@ async function handleWelcomeAccess(request, env, url) {
   async function buildHtml(tier) {
     const deployUrl = (await getCred(env, "WELCOME_DEPLOY_URL")) || "#deploy-url-not-configured";
     const tierBlock = tier === "agency"
-      ? '<div class="card" style="border:2px solid #c9a961; background: linear-gradient(135deg,#fdfbf6,#f5efe2);">' +
-        '<span class="step-num" style="background:#c9a961;">⭐</span>' +
+      ? '<div class="card" style="border:2px solid #F5A623; background: linear-gradient(135deg,#fdfbf6,#f5efe2);">' +
+        '<span class="step-num" style="background:#F5A623;">⭐</span>' +
         '<h3>You are on the Agency plan</h3>' +
         '<p>You can run StokeReel for unlimited clients and brands from a single install. Specifically:</p>' +
         '<ul style="font-size: 14px; line-height: 1.7; margin: 8px 0 0; padding-left: 20px;">' +
@@ -1387,7 +1389,7 @@ const ADMIN_HTML = `<!DOCTYPE html>
   :root {
     --cream: #faf7f2;
     --ink: #1a1a1a;
-    --warm: #c9a961;
+    --warm: #F5A623;
     --muted: #6b6b6b;
     --border: #e5e0d6;
     --error: #b84a3a;
@@ -1422,7 +1424,7 @@ const ADMIN_HTML = `<!DOCTYPE html>
     font-size: 14px;
     font-weight: 500;
   }
-  button:hover { background: #a88840; }
+  button:hover { background: #D88E11; }
   .gate { max-width: 320px; margin: 80px auto; text-align: center; }
   .gate input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 16px; margin: 16px 0; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
@@ -1624,7 +1626,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231a1a1a'/%3E%3Cpolygon points='24,16 24,48 52,32' fill='%23c9a961'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
   html, body { height: 100%; }
@@ -1649,7 +1651,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
   }
   input[type="text"]:focus, input[type="number"]:focus, input[type="email"]:focus, input[type="password"]:focus, textarea:focus, select:focus {
     outline: none;
-    border-color: #c9a961 !important;
+    border-color: #F5A623 !important;
     box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.18);
   }
   /* Buttons get a lift */
@@ -1695,7 +1697,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #c9a961;
+    color: #F5A623;
     margin-bottom: 8px;
   }
   .rail-tip-body {
@@ -1833,7 +1835,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
     margin-top: 16px;
     padding: 18px;
     background: #faf7f2;
-    border: 1px dashed #c9a961;
+    border: 1px dashed #F5A623;
     border-radius: 8px;
     position: relative;
   }
@@ -1842,7 +1844,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
     position: absolute;
     top: -10px;
     left: 14px;
-    background: #c9a961;
+    background: #F5A623;
     color: white;
     font-size: 10px;
     font-weight: 700;
@@ -2034,7 +2036,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
   }
   .color-input-row:hover { border-color: #d8d2c2; }
   .color-input-row:focus-within {
-    border-color: #c9a961;
+    border-color: #F5A623;
     box-shadow: 0 0 0 3px rgba(201,169,97,0.18);
   }
   input[type="color"].color-swatch {
@@ -2128,7 +2130,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
   }
   .shape-demo {
     width: 56px; height: 28px;
-    background: linear-gradient(180deg, #c9a961, #b89752);
+    background: linear-gradient(180deg, #F5A623, #D88E11);
     color: white;
     display: flex; align-items: center; justify-content: center;
     font-size: 11px; font-weight: 700;
@@ -2233,7 +2235,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
   .gate-bookmark strong { display: block; color: #1a1a1a; font-weight: 600; margin-bottom: 1px; }
   .gate-bookmark span { color: #5a4a20; }
   button {
-    background: linear-gradient(180deg, #c9a961 0%, #b89752 100%);
+    background: linear-gradient(180deg, #F5A623 0%, #D88E11 100%);
     color: white; border: none; padding: 11px 22px; border-radius: 999px;
     cursor: pointer; font-size: 14px; font-weight: 600; font-family: inherit;
     letter-spacing: 0.005em;
@@ -2243,7 +2245,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
       0 4px 14px -4px rgba(201,169,97,0.4);
   }
   button:hover:not(:disabled):not(.secondary) {
-    background: linear-gradient(180deg, #c9a961 0%, #a88840 100%);
+    background: linear-gradient(180deg, #F5A623 0%, #D88E11 100%);
     box-shadow:
       inset 0 1px 0 rgba(255,255,255,0.2),
       0 2px 4px rgba(15,23,42,0.08),
@@ -2288,7 +2290,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
     justify-content: center;
     width: 24px; height: 24px;
     border-radius: 50%;
-    background: linear-gradient(180deg, #c9a961, #b89752);
+    background: linear-gradient(180deg, #F5A623, #D88E11);
     color: #1a1a1a;
     flex-shrink: 0;
   }
@@ -2395,7 +2397,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .ws-select:hover { border-color: #d8d2c2 !important; }
-  .ws-select:focus { outline: none; border-color: #c9a961 !important; box-shadow: 0 0 0 3px rgba(201,169,97,0.18); }
+  .ws-select:focus { outline: none; border-color: #F5A623 !important; box-shadow: 0 0 0 3px rgba(201,169,97,0.18); }
   .ws-add {
     display: inline-flex; align-items: center; gap: 5px;
     background: white !important;
@@ -2587,7 +2589,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
     font-size: 15px; color: #1a1a1a; font-weight: 600;
   }
   .share-badge {
-    background: linear-gradient(180deg, #c9a961, #b89752);
+    background: linear-gradient(180deg, #F5A623, #D88E11);
     color: white;
     font-size: 10px;
     font-weight: 700;
@@ -2623,7 +2625,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
   }
   .share-input-row input:focus {
     background: white !important;
-    border-color: #c9a961 !important;
+    border-color: #F5A623 !important;
   }
   /* Section eyebrow — small uppercase label above H2 */
   .section-eyebrow {
@@ -2631,7 +2633,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #c9a961;
+    color: #F5A623;
     margin-bottom: 8px;
     display: inline-flex;
     align-items: center;
@@ -2641,7 +2643,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
     content: "";
     width: 16px;
     height: 1px;
-    background: #c9a961;
+    background: #F5A623;
     display: inline-block;
   }
   /* Email cards */
@@ -2806,7 +2808,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
     box-shadow: 0 1px 3px rgba(0,0,0,0.15);
   }
   .toggle-switch input:checked + .slider {
-    background: linear-gradient(180deg, #c9a961, #b89752);
+    background: linear-gradient(180deg, #F5A623, #D88E11);
   }
   .toggle-switch input:checked + .slider::before {
     transform: translateX(18px);
@@ -2987,7 +2989,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
   .sub-meta .date::before {
     content: "";
     width: 4px; height: 4px;
-    background: #c9a961;
+    background: #F5A623;
     border-radius: 50%;
     display: inline-block;
   }
@@ -3007,7 +3009,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
     transition: all 0.15s;
   }
   .feature-toggle:hover {
-    border-color: #c9a961 !important;
+    border-color: #F5A623 !important;
     color: #1a1a1a !important;
     background: #fdfbf6 !important;
   }
@@ -3049,8 +3051,8 @@ const CONFIG_HTML = `<!DOCTYPE html>
     --d-muted-2: #5a5a5a;
     --d-border: rgba(255,255,255,0.08);
     --d-border-strong: rgba(255,255,255,0.16);
-    --d-warm: #d4b673;
-    --d-warm-bright: #fbd86e;
+    --d-warm: #F5A623;
+    --d-warm-bright: #FFB94A;
   }
   body {
     background: var(--d-bg) !important;
@@ -3126,11 +3128,11 @@ const CONFIG_HTML = `<!DOCTYPE html>
   .tab { color: var(--d-muted) !important; }
   .tab:hover { color: var(--d-ink) !important; background: rgba(255,255,255,0.04) !important; }
   .tab.active {
-    background: linear-gradient(180deg, #f0d57a 0%, #c9a961 100%) !important;
+    background: linear-gradient(180deg, #FFB94A 0%, #F5A623 100%) !important;
     color: #0a0a0a !important;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 14px -4px rgba(212,182,115,0.4) !important;
   }
-  .tab.active:hover { background: linear-gradient(180deg, #f0d57a 0%, #c9a961 100%) !important; color: #0a0a0a !important; }
+  .tab.active:hover { background: linear-gradient(180deg, #FFB94A 0%, #F5A623 100%) !important; color: #0a0a0a !important; }
   /* Sub-tabs (Style / Welcome / Questions / etc) */
   .sub-tabs {
     background: linear-gradient(180deg, rgba(212,182,115,0.06) 0%, rgba(212,182,115,0.02) 100%) !important;
@@ -3236,7 +3238,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
   }
   /* Buttons — exclude .secondary so template buttons + others stay dark */
   button:not(.tab):not(.sub-tab):not(.copy-btn):not(.secondary):not(.ws-add):not(.ws-save):not(.ws-delete):not(.text-link-btn):not(.shape-card):not(.toggle-switch):not(.subs-btn-ghost):not(.subs-btn-primary):not(.update-banner-btn):not(.update-banner-dismiss):not(.feature-toggle):not(.copy-btn-pro):not(.device-tab) {
-    background: linear-gradient(180deg, #f0d57a 0%, #c9a961 100%) !important;
+    background: linear-gradient(180deg, #FFB94A 0%, #F5A623 100%) !important;
     color: #0a0a0a !important;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 14px -4px rgba(212,182,115,0.45) !important;
   }
@@ -3255,7 +3257,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
   /* Wizard nav */
   .wizard-nav { border-top-color: var(--d-border) !important; }
   .wizard-nav button.next {
-    background: linear-gradient(180deg, #f0d57a 0%, #c9a961 100%) !important;
+    background: linear-gradient(180deg, #FFB94A 0%, #F5A623 100%) !important;
     color: #0a0a0a !important;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 14px -4px rgba(212,182,115,0.4) !important;
   }
@@ -3392,6 +3394,112 @@ const CONFIG_HTML = `<!DOCTYPE html>
   /* Question block */
   .question-block { background: var(--d-bg-3) !important; }
 
+  /* === Atmosphere stack: grain + radial glow on body === */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background:
+      radial-gradient(900px 600px at 0% -10%, rgba(245,166,35,0.10), transparent 55%),
+      radial-gradient(700px 500px at 100% 110%, rgba(255,45,85,0.05), transparent 60%);
+  }
+
+  /* === REC dot before "StokeReel" wordmark === */
+  .brand-rec-dot {
+    display: inline-block;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: #FF2D55;
+    flex-shrink: 0;
+    animation: stokereel-rec-pulse 2s ease-in-out infinite;
+  }
+  @keyframes stokereel-rec-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(255,45,85,0.7); }
+    50% { opacity: 0.4; transform: scale(0.85); box-shadow: 0 0 0 4px rgba(255,45,85,0); }
+  }
+
+  /* === Section eyebrow (mono caps + REC dot) === */
+  .section-eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, monospace !important;
+    font-size: 10.5px !important;
+    font-weight: 500;
+    text-transform: uppercase !important;
+    letter-spacing: 0.16em !important;
+    color: var(--d-muted) !important;
+    margin-bottom: 10px !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .section-eyebrow::before { display: none !important; } /* override the existing gold dash */
+  .section-eyebrow .rec-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #FF2D55;
+    flex-shrink: 0;
+    animation: stokereel-rec-pulse 2s ease-in-out infinite;
+    box-shadow: none;
+  }
+
+  /* === Section titles (Bebas Neue, uppercase, last word amber) === */
+  .section h2 {
+    font-family: "Bebas Neue", "Syne", "DM Sans", sans-serif !important;
+    font-size: 32px !important;
+    line-height: 1 !important;
+    letter-spacing: 0.02em !important;
+    font-weight: 400 !important;
+    text-transform: uppercase !important;
+    color: var(--d-ink) !important;
+    margin: 0 0 14px !important;
+  }
+  /* Auto-amber the LAST word via JS-injected span (see paintSectionAccents) */
+  .section h2 .accent { color: #F5A623 !important; }
+
+  /* === Logo treatment demo swatches === */
+  .logo-treatment-block .logo-treatment-label {
+    display: block;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--d-muted) !important;
+    margin-bottom: 10px;
+  }
+  .logo-treatment-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 720px) { .logo-treatment-grid { grid-template-columns: 1fr; } }
+  .logo-treatment-demo {
+    width: 56px; height: 32px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    background: #ffffff;
+    color: #000;
+    font-family: "Bebas Neue", sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    position: relative;
+  }
+  .lt-original::before { content: "LOGO"; }
+  .lt-invert { background: #000; color: #fff; }
+  .lt-invert::before { content: "LOGO"; }
+  .lt-tint { background: rgba(245,166,35,0.10); }
+  .lt-tint::before { content: "LOGO"; color: #F5A623; }
+
   /* ===========================================================
      OBSIDIAN STUDIO — Welcome message sub-panel ONLY
      Scoped to .sub-panel.obsidian so the rest of the dashboard
@@ -3401,7 +3509,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
   :root {
     --obs-amber: #F5A623;
     --obs-amber-bright: #FFB94A;
-    --obs-amber-deep: #C8841C;
+    --obs-amber-deep: #D88E11;
     --obs-red: #FF2D55;
     --obs-surface: #0F0F12;
     --obs-elevated: #18181C;
@@ -3600,7 +3708,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
   }
   /* Primary button inside obsidian */
   .sub-panel.obsidian .obs-btn-primary {
-    background: linear-gradient(180deg, #FFB94A 0%, #F5A623 50%, #C8841C 100%) !important;
+    background: linear-gradient(180deg, #FFB94A 0%, #F5A623 50%, #D88E11 100%) !important;
     color: #14100A !important;
     border: 0 !important;
     padding: 12px 22px !important;
@@ -3685,7 +3793,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
     background: rgba(0,0,0,0.4);
   }
   .sub-panel.obsidian .wizard-nav button.next {
-    background: linear-gradient(180deg, #FFB94A 0%, #F5A623 50%, #C8841C 100%) !important;
+    background: linear-gradient(180deg, #FFB94A 0%, #F5A623 50%, #D88E11 100%) !important;
     color: #14100A !important;
     border-radius: 8px !important;
     box-shadow:
@@ -3737,7 +3845,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
       <li style="margin-bottom:10px;">Come back here and visit your StokeReel URL with <code style="background:#faf7f2; padding:2px 6px; border-radius:4px; font-size:12.5px;">/setup</code> on the end. The wizard will run again and let you set a new password.</li>
     </ol>
 
-    <div style="margin-top: 22px; padding: 14px 16px; background: #fef9e7; border: 1px solid #f0e6c4; border-left: 3px solid #c9a961; border-radius: 8px; font-size: 13px; line-height: 1.6;">
+    <div style="margin-top: 22px; padding: 14px 16px; background: #fef9e7; border: 1px solid #f0e6c4; border-left: 3px solid #F5A623; border-radius: 8px; font-size: 13px; line-height: 1.6;">
       <strong>This time, type the password yourself.</strong> If your password manager (1Password, iCloud Keychain, Chrome, etc.) pops up offering to "suggest a strong password" — dismiss it. Pick a password you'll remember, then save it manually to your password manager after.
     </div>
 
@@ -3797,10 +3905,7 @@ const CONFIG_HTML = `<!DOCTYPE html>
   <div class="app-header">
     <div class="brand-row">
       <div class="brand-mark">
-        <svg width="32" height="32" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect width="64" height="64" rx="14" fill="#1a1a1a"/>
-          <polygon points="24,16 24,48 52,32" fill="#c9a961"/>
-        </svg>
+        <span class="brand-rec-dot" aria-hidden="true"></span>
         <div>
           <div class="brand-name">StokeReel</div>
           <div class="brand-tag" id="tabSub">Configure your funnels and review submissions</div>
@@ -3889,7 +3994,8 @@ const CONFIG_HTML = `<!DOCTYPE html>
 
       <div class="sub-panel active" data-sub="style">
       <div class="section">
-        <h2>Logo</h2>
+        <div class="section-eyebrow"><span class="rec-dot"></span>BRAND · ASSET</div>
+        <h2 class="section-h">Logo</h2>
         <p class="help-text">Shows above the headline on intro and thank-you screens. PNG, JPG, SVG, or WebP. Max 2MB.</p>
         <div class="logo-row">
           <div id="logoPreview" class="logo-preview">No logo</div>
@@ -3903,16 +4009,45 @@ const CONFIG_HTML = `<!DOCTYPE html>
         <div class="field" id="logoUrlField" style="display:none; margin-top:12px; margin-bottom:0;">
           <input type="text" data-key="logoUrl" placeholder="https://yoursite.com/logo.png">
         </div>
+
+        <div class="logo-treatment-block" style="margin-top: 22px;">
+          <label class="logo-treatment-label">Logo treatment</label>
+          <div class="logo-treatment-grid shape-grid" data-shape-target="logoTreatment">
+            <button type="button" class="shape-card" data-shape-value="original" onclick="pickShape(this); refreshLogoPreview();">
+              <div class="logo-treatment-demo lt-original"></div>
+              <span>Original</span>
+            </button>
+            <button type="button" class="shape-card" data-shape-value="invert" onclick="pickShape(this); refreshLogoPreview();">
+              <div class="logo-treatment-demo lt-invert"></div>
+              <span>Invert</span>
+            </button>
+            <button type="button" class="shape-card" data-shape-value="tint" onclick="pickShape(this); refreshLogoPreview();">
+              <div class="logo-treatment-demo lt-tint"></div>
+              <span>Tint</span>
+            </button>
+          </div>
+          <input type="hidden" data-key="logoTreatment">
+          <div class="field" id="logoTintField" style="display:none; margin-top:12px; margin-bottom:0;">
+            <label>Tint color</label>
+            <div class="color-input-row">
+              <input type="color" data-key="logoTintColor" class="color-swatch">
+              <input type="text" data-key="logoTintColor" class="color-hex" placeholder="(uses Primary if blank)">
+            </div>
+          </div>
+          <p class="help-text" style="margin-top: 10px;">Black or dark logos can disappear on dark backgrounds. <strong>Invert</strong> flips light/dark. <strong>Tint</strong> recolors to a chosen color (defaults to your Primary).</p>
+        </div>
       </div>
 
       <div class="section">
-        <h2>Quick-start templates</h2>
+        <div class="section-eyebrow"><span class="rec-dot"></span>QUICK · START</div>
+        <h2 class="section-h">Quick-start templates</h2>
         <p class="help-text">Apply a preset look. You can customize anything after.</p>
         <div id="templatesGrid" class="templates-grid"></div>
       </div>
 
       <div class="section">
-        <h2>Brand colors</h2>
+        <div class="section-eyebrow"><span class="rec-dot"></span>PALETTE · 8 CHANNELS</div>
+        <h2 class="section-h">Brand colors</h2>
         <p class="help-text">Click any swatch to pick a new color, or paste a hex value.</p>
         <div class="color-grid">
           <div class="color-cell">
@@ -3975,7 +4110,8 @@ const CONFIG_HTML = `<!DOCTYPE html>
       </div>
 
       <div class="section">
-        <h2>Heading font</h2>
+        <div class="section-eyebrow"><span class="rec-dot"></span>TYPOGRAPHY · DISPLAY</div>
+        <h2 class="section-h">Heading font</h2>
         <p class="help-text">Google fonts auto-load on the live recorder. No setup needed.</p>
         <div class="field" style="margin-bottom:0;">
           <select data-key="headingFont" id="headingFontSelect" class="premium-select"></select>
@@ -4578,11 +4714,23 @@ function fontGoogleUrl(googleSpec) {
 // Template presets — visual styles users can apply with one click.
 const TEMPLATES = [
   {
+    id: "obsidian",
+    name: "Obsidian Studio",
+    swatch: ["#080808", "#F5A623", "#FF2D55"],
+    config: {
+      brandColor: "#F5A623", brandColorDark: "#D88E11", buttonTextColor: "#1A0E00",
+      backgroundColor: "#080808", textColor: "#F0EEE9", mutedTextColor: "#6B6B7A",
+      borderColor: "#1F1F23", errorColor: "#FF2D55",
+      headingFont: '"Bebas Neue", "Syne", Georgia, serif',
+      headingFontGoogleUrl: "https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap"
+    }
+  },
+  {
     id: "editorial",
     name: "Editorial",
-    swatch: ["#faf7f2", "#c9a961", "#1a1a1a"],
+    swatch: ["#faf7f2", "#F5A623", "#1a1a1a"],
     config: {
-      brandColor: "#c9a961", brandColorDark: "#a88840", backgroundColor: "#faf7f2",
+      brandColor: "#F5A623", brandColorDark: "#D88E11", backgroundColor: "#faf7f2",
       textColor: "#1a1a1a", mutedTextColor: "#6b6b6b", borderColor: "#e5e0d6", errorColor: "#b84a3a",
       headingFont: 'Georgia, "Times New Roman", serif', headingFontGoogleUrl: ""
     }
@@ -4610,9 +4758,9 @@ const TEMPLATES = [
   {
     id: "premium-gold",
     name: "Premium Gold",
-    swatch: ["#0a0a0a", "#d4af37", "#f5f5f5"],
+    swatch: ["#0a0a0a", "#F5A623", "#f5f5f5"],
     config: {
-      brandColor: "#d4af37", brandColorDark: "#b08c2b", backgroundColor: "#0a0a0a",
+      brandColor: "#F5A623", brandColorDark: "#D88E11", backgroundColor: "#0a0a0a",
       textColor: "#f5f5f5", mutedTextColor: "#a3a3a3", borderColor: "#262626", errorColor: "#ef4444",
       headingFont: '"Playfair Display", Georgia, serif', headingFontGoogleUrl: fontGoogleUrl("Playfair+Display:wght@400;600")
     }
@@ -4746,7 +4894,7 @@ async function refreshCustomDomainStatus(hostname) {
 
     const ok = data.status === "active" && data.ssl_status === "active";
     const cnameInstructions =
-      '<div style="margin-top:12px; padding:14px; background:#fdfbf6; border:1px solid #c9a961; border-radius:6px; line-height:1.6; font-size:13px;">' +
+      '<div style="margin-top:12px; padding:14px; background:#fdfbf6; border:1px solid #F5A623; border-radius:6px; line-height:1.6; font-size:13px;">' +
       '<strong>Add this CNAME record at your DNS provider</strong> (GoDaddy, Namecheap, wherever your domain lives):' +
       '<table style="width:100%; margin-top:8px; font-family:monospace; font-size:12px; border-collapse:collapse;">' +
       '<tr><td style="padding:4px 6px; color:#6b6b6b;">Type</td><td style="padding:4px 6px;">CNAME</td></tr>' +
@@ -4801,13 +4949,39 @@ function refreshLogoPreview() {
   const url = document.querySelector('input[data-key="logoUrl"]').value.trim();
   const preview = document.getElementById("logoPreview");
   const removeBtn = document.getElementById("logoRemoveBtn");
+  // Read treatment + tint color
+  const treatmentInput = document.querySelector('input[type="hidden"][data-key="logoTreatment"]');
+  const treatment = (treatmentInput && treatmentInput.value) || "original";
+  const tintInput = document.querySelector('input[type="text"][data-key="logoTintColor"]');
+  const brandColorInput = document.querySelector('input[data-key="brandColor"]');
+  const tintColor = (tintInput && tintInput.value && tintInput.value.trim())
+    || (brandColorInput && brandColorInput.value)
+    || "#F5A623";
+  // Show/hide tint color field
+  const tintField = document.getElementById("logoTintField");
+  if (tintField) tintField.style.display = treatment === "tint" ? "block" : "none";
   if (url) {
-    preview.innerHTML = '<img src="' + escapeAttr(url) + '" style="max-width:100%; max-height:100%; object-fit:contain;">';
+    preview.innerHTML = '<img src="' + escapeAttr(url) + '" style="max-width:100%; max-height:100%; object-fit:contain;' + buildLogoFilterStyle(treatment, tintColor) + '">';
     removeBtn.style.display = "inline-block";
   } else {
     preview.innerHTML = "No logo";
     removeBtn.style.display = "none";
   }
+}
+
+// Build the inline style fragment for the logo treatment.
+// "original" → no filter
+// "invert"   → invert colors (black ↔ white, etc.)
+// "tint"     → flatten to black, then re-color via drop-shadow trick.
+//              Note: this works best on solid logos with transparency.
+function buildLogoFilterStyle(treatment, tintColor) {
+  if (treatment === "invert") return " filter: invert(1);";
+  if (treatment === "tint") {
+    // Drop-shadow recolor: hide original (opacity 0) and project a shadow
+    // in the tint color. Keeps logo shape, replaces fill.
+    return " filter: brightness(0) saturate(100%) drop-shadow(0 0 0 " + tintColor + "); -webkit-filter: brightness(0) saturate(100%) drop-shadow(0 0 0 " + tintColor + ");";
+  }
+  return "";
 }
 
 function toggleLogoUrl() {
@@ -4907,6 +5081,24 @@ function syncShapeCards() {
     grid.querySelectorAll(".shape-card").forEach(c => {
       c.classList.toggle("active", c.getAttribute("data-shape-value") === current);
     });
+  });
+}
+
+// One-time pass: split each .section h2's last word into a .accent span so
+// section titles render with an amber accent on the final word. Skips the
+// obsidian welcome panel which has its own pre-painted accents.
+function paintSectionAccents() {
+  document.querySelectorAll(".section h2").forEach(h => {
+    if (h.dataset.accentPainted) return;
+    if (h.querySelector(".accent")) { h.dataset.accentPainted = "1"; return; }
+    const text = h.textContent.trim();
+    if (!text) return;
+    const idx = text.lastIndexOf(" ");
+    if (idx < 0) return;
+    const head = text.slice(0, idx);
+    const tail = text.slice(idx + 1);
+    h.innerHTML = escapeHtml(head) + ' <span class="accent">' + escapeHtml(tail) + '</span>';
+    h.dataset.accentPainted = "1";
   });
 }
 
@@ -5135,8 +5327,8 @@ function populateContentPresets() {
           '</div>'
         ).join("");
         previewEl.innerHTML =
-          '<div style="padding:16px; background:white; border:1px dashed #c9a961; border-radius:8px; position:relative;">' +
-          '<div style="position:absolute; top:-9px; left:14px; background:#c9a961; color:white; font-size:10px; font-weight:700; letter-spacing:0.06em; padding:2px 9px; border-radius:999px;">PREVIEW</div>' +
+          '<div style="padding:16px; background:white; border:1px dashed #F5A623; border-radius:8px; position:relative;">' +
+          '<div style="position:absolute; top:-9px; left:14px; background:#F5A623; color:white; font-size:10px; font-weight:700; letter-spacing:0.06em; padding:2px 9px; border-radius:999px;">PREVIEW</div>' +
           '<div style="margin-bottom:12px;">' +
           '<div style="font-weight:700; color:#6b6b6b; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Welcome title</div>' +
           '<div style="font-family:Georgia,serif; font-size:18px;">' + escapeHtml(preset.welcome.title) + '</div>' +
@@ -5614,6 +5806,7 @@ function populateForm(config) {
   refreshLogoPreview();
   renderCustomDomainCard();
   syncShapeCards();
+  paintSectionAccents();
   // Render the wizard nav for whichever sub-tab is currently active
   const activeTab = document.querySelector(".sub-tab.active");
   if (activeTab) renderWizardNav(activeTab.dataset.subtab);
@@ -5765,6 +5958,7 @@ function toast(msg) {
 function refreshPreview() {
   const cfg = readForm();
   loadDashboardFont(cfg.headingFontGoogleUrl);
+  refreshLogoPreview();
   renderWelcomePreview(cfg);
   renderQuestionsPreview(cfg);
   renderThankYouPreview(cfg);
@@ -5906,8 +6100,8 @@ function renderThankYouPreview(c) {
   el.style.background = c.backgroundColor;
   el.style.color = c.textColor;
   const logo = c.logoUrl ? '<img class="pv-logo" src="' + escapeAttr(c.logoUrl) + '">' : '';
-  const checkBg = "color-mix(in srgb, " + (c.brandColor || "#c9a961") + " 14%, white)";
-  const checkColor = c.brandColorDark || c.brandColor || "#a88840";
+  const checkBg = "color-mix(in srgb, " + (c.brandColor || "#F5A623") + " 14%, white)";
+  const checkColor = c.brandColorDark || c.brandColor || "#D88E11";
   const button = (c.thankYouButtonLabel && c.thankYouButtonUrl)
     ? '<button class="pv-cta" style="background:' + escapeAttr(c.brandColor) + '; margin-top:14px;">' + escapeHtml(c.thankYouButtonLabel) + '</button>'
     : '';
@@ -6263,20 +6457,20 @@ const SETUP_HTML = `<!DOCTYPE html>
   .step:last-child { border-bottom: none; }
   .step-num {
     display: inline-flex; width: 24px; height: 24px; border-radius: 50%;
-    background: #c9a961; color: white; font-size: 13px; font-weight: 600;
+    background: #F5A623; color: white; font-size: 13px; font-weight: 600;
     align-items: center; justify-content: center; margin-right: 8px; vertical-align: middle;
   }
   .step h2 { display: inline; font-size: 16px; font-weight: 600; vertical-align: middle; margin: 0; }
   .step .help { color: #6b6b6b; font-size: 13px; margin: 6px 0 12px 32px; }
-  .step .help a { color: #c9a961; text-decoration: underline; }
+  .step .help a { color: #F5A623; text-decoration: underline; }
   label { display: block; font-size: 13px; margin-bottom: 4px; color: #1a1a1a; font-weight: 500; }
   input { width: 100%; padding: 10px 12px; border: 1px solid #e5e0d6; border-radius: 6px; font-size: 15px; font-family: inherit; }
-  input:focus { outline: none; border-color: #c9a961; }
+  input:focus { outline: none; border-color: #F5A623; }
   button {
-    background: #c9a961; color: white; border: none; padding: 12px 24px; border-radius: 999px;
+    background: #F5A623; color: white; border: none; padding: 12px 24px; border-radius: 999px;
     font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 12px; font-family: inherit;
   }
-  button:hover:not(:disabled) { background: #a88840; }
+  button:hover:not(:disabled) { background: #D88E11; }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
   .field { margin-bottom: 12px; }
   .field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -6301,7 +6495,7 @@ const SETUP_HTML = `<!DOCTYPE html>
   <div style="display:flex; align-items:center; gap:10px; margin-bottom: 18px;">
     <svg width="36" height="36" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <rect width="64" height="64" rx="14" fill="#1a1a1a"/>
-      <polygon points="24,16 24,48 52,32" fill="#c9a961"/>
+      <polygon points="24,16 24,48 52,32" fill="#F5A623"/>
     </svg>
     <strong style="font-family: Georgia, serif; font-size: 20px;">StokeReel</strong>
   </div>
@@ -6348,7 +6542,7 @@ const SETUP_HTML = `<!DOCTYPE html>
     </div>
     <div class="field">
       <label>Secret Access Key</label>
-      <div class="help" style="margin-bottom: 6px; padding: 10px 12px; background: #fef9e7; border: 1px solid #f0e6c4; border-left: 3px solid #c9a961; border-radius: 6px; font-size: 13px;">
+      <div class="help" style="margin-bottom: 6px; padding: 10px 12px; background: #fef9e7; border: 1px solid #f0e6c4; border-left: 3px solid #F5A623; border-radius: 6px; font-size: 13px;">
         <strong>⚠ Don't let your password manager create a password here.</strong> If 1Password / iCloud Keychain / Chrome / etc. pops up offering to "suggest a strong password," dismiss it. The Secret Access Key is the one Cloudflare gave you — paste that exact value, don't generate a new one. Look for it on the same page as your Access Key ID above.
       </div>
       <input type="password" id="r2SecretAccessKey" placeholder="Paste the Secret Access Key from Cloudflare" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore="true" data-form-type="other">
@@ -6441,8 +6635,8 @@ const WELCOME_HTML = `<!DOCTYPE html>
   :root {
     --cream: #faf7f2;
     --ink: #1a1a1a;
-    --warm: #c9a961;
-    --warm-dark: #a88840;
+    --warm: #F5A623;
+    --warm-dark: #D88E11;
     --muted: #6b6b6b;
     --border: #e5e0d6;
   }
@@ -6513,7 +6707,7 @@ const WELCOME_HTML = `<!DOCTYPE html>
   <div style="display:flex; align-items:center; gap:10px; margin: 0 0 14px;">
     <svg width="32" height="32" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <rect width="64" height="64" rx="14" fill="#1a1a1a"/>
-      <polygon points="24,16 24,48 52,32" fill="#c9a961"/>
+      <polygon points="24,16 24,48 52,32" fill="#F5A623"/>
     </svg>
     <span style="font-family: Georgia, serif; font-size: 18px; font-weight: 600;">StokeReel</span>
   </div>
@@ -6628,7 +6822,7 @@ const WELCOME_HTML = `<!DOCTYPE html>
                 <span style="display: inline-block; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; color: #1a1a1a; background: #fffbe8; border: 1px solid #f0e6c4; padding: 3px 8px; border-radius: 6px;">testimonials.&lt;your-subdomain&gt;.workers.dev</span>
                 <div style="position: absolute; left: calc(100% + 12px); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
                   <svg width="22" height="14" viewBox="0 0 22 14" fill="none" aria-hidden="true">
-                    <path d="M0 7 H17 M12 2 L17 7 L12 12" stroke="#c9a961" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M0 7 H17 M12 2 L17 7 L12 12" stroke="#F5A623" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                   <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; font-weight: 700; color: #8a6f30; background: #fbf6e8; border: 1px solid #ecdfb6; padding: 4px 10px; border-radius: 999px;">This whole string is your URL</span>
                 </div>
