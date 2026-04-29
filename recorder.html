@@ -77,7 +77,7 @@
     border: none;
     padding: 14px 28px;
     font-size: 15px;
-    border-radius: 999px;
+    border-radius: var(--vt-btn-radius, 999px);
     cursor: pointer;
     margin-top: 28px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -115,34 +115,48 @@
   .vt-wrap button.vt-record {
     background: linear-gradient(180deg, var(--vt-error) 0%, color-mix(in srgb, var(--vt-error) 88%, black) 100%);
     color: var(--vt-button-text, white);
-    padding: 18px 36px;
+    padding: 18px 38px;
+    border-radius: var(--vt-record-radius, 12px);
     font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.01em;
     box-shadow:
       inset 0 1px 0 rgba(255,255,255,0.15),
       0 2px 4px rgba(15, 23, 42, 0.08),
-      0 8px 20px -4px color-mix(in srgb, var(--vt-error) 45%, transparent);
+      0 10px 26px -4px color-mix(in srgb, var(--vt-error) 50%, transparent);
     display: inline-flex;
+    flex-direction: row;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    gap: 12px;
   }
   .vt-wrap button.vt-record::before {
     content: "";
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     background: white;
     border-radius: 50%;
     display: inline-block;
-    box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
+    box-shadow: 0 0 0 2.5px rgba(255,255,255,0.28);
   }
   .vt-wrap button.vt-record:hover:not(:disabled) {
     background: linear-gradient(180deg, color-mix(in srgb, var(--vt-error) 92%, black) 0%, color-mix(in srgb, var(--vt-error) 75%, black) 100%);
+    transform: translateY(-1px);
     box-shadow:
       inset 0 1px 0 rgba(255,255,255,0.15),
       0 4px 8px rgba(15, 23, 42, 0.1),
-      0 14px 32px -6px color-mix(in srgb, var(--vt-error) 55%, transparent);
+      0 18px 36px -6px color-mix(in srgb, var(--vt-error) 60%, transparent);
   }
+  /* Generous breathing room above the record button */
+  #vtRecordControls { margin-top: 28px; }
+  /* Record button placement — controlled via data-record-placement attr.
+     Only switch to flex when the step is .active so the .vt-step display:none rule
+     keeps non-active steps hidden. */
+  #vtStep-question.active { display: flex; flex-direction: column; }
+  #vtStep-question.active > * { order: 0; }
+  /* default (above-video): button keeps source order */
+  #vtStep-question.active[data-record-placement="below-video"] #vtRecordControls { order: 10; margin-top: 16px; }
+  #vtStep-question.active[data-record-placement="below-video"] .vt-video-container { order: 5; }
   .vt-wrap button.vt-stop {
     background: var(--vt-ink);
     color: var(--vt-button-text, white);
@@ -482,7 +496,7 @@
     <p class="vt-helper" id="vtQuestionHelper"></p>
 
     <div class="vt-button-row" id="vtRecordControls">
-      <button id="vtRecordBtn" class="vt-record">Start recording</button>
+      <button id="vtRecordBtn" class="vt-record">Record</button>
     </div>
 
     <div class="vt-video-container">
@@ -569,7 +583,7 @@
     signature: "",
     supportEmail: "",
     getStartedLabel: "Get started",
-    startRecordingLabel: "Start recording",
+    startRecordingLabel: "Record",
     nextQuestionLabel: "Next question →",
     doneReviewLabel: "Done — review",
     restartLabel: "Start over",
@@ -582,6 +596,9 @@
     allowVideo: true,
     allowText: true,
     maxRecordingSeconds: 300,
+    buttonStyle: "rounded",
+    recordButtonShape: "rounded",
+    recordButtonPlacement: "above-video",
     thankYouButtonLabel: "",
     thankYouButtonUrl: "",
     notifyWebhookUrl: "",
@@ -675,12 +692,19 @@
     document.head.appendChild(link);
   }
 
+  // Old default values that should be auto-upgraded to the new defaults
+  // (one-time migration: if a saved config still has the OLD default verbatim,
+  // treat it as unset so the new default kicks in).
+  const LEGACY_DEFAULTS = {
+    startRecordingLabel: "Start recording"
+  };
   function applyConfig(c) {
     // Merge DEFAULTS with c, but skip empty strings from c so defaults shine through.
     cfg = { ...DEFAULTS };
     for (const k in (c || {})) {
       const v = c[k];
       if (typeof v === "string" && v === "") continue;
+      if (typeof v === "string" && LEGACY_DEFAULTS[k] === v) continue;
       cfg[k] = v;
     }
     QUESTIONS = cfg.questions && cfg.questions.length ? cfg.questions : DEFAULTS.questions;
@@ -699,6 +723,15 @@
       wrap.style.setProperty("--vt-border", cfg.borderColor);
       wrap.style.setProperty("--vt-error", cfg.errorColor);
       wrap.style.fontFamily = cfg.headingFont;
+      // Button shape — rounded (pill-ish) or sharp
+      const radiusMap = { rounded: "999px", sharp: "3px" };
+      wrap.style.setProperty("--vt-btn-radius", radiusMap[cfg.buttonStyle] || "999px");
+      // Record button shape — rounded or sharp rectangle
+      const recRadiusMap = { rounded: "12px", sharp: "3px" };
+      wrap.style.setProperty("--vt-record-radius", recRadiusMap[cfg.recordButtonShape] || "12px");
+      // Record button placement — "above-video" or "below-video"
+      const qStep = document.getElementById("vtStep-question");
+      if (qStep) qStep.setAttribute("data-record-placement", cfg.recordButtonPlacement || "above-video");
     }
 
     // Copy
@@ -810,7 +843,7 @@
 
       const controls = $("vtRecordControls");
       if (controls) {
-        controls.innerHTML = '<button class="vt-record" type="button">' + (cfg.startRecordingLabel || "Start recording") + '</button>';
+        controls.innerHTML = '<button class="vt-record" type="button">' + (cfg.startRecordingLabel || "Record") + '</button>';
         controls.style.display = "flex";
       }
       const reviewControls = $("vtReviewControls");

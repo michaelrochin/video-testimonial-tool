@@ -114,6 +114,11 @@
   }
   .faq dt { font-weight: 600; margin-top: 18px; }
   .faq dd { margin: 4px 0 0; color: var(--muted); }
+  .faq dd p { margin: 0 0 10px; }
+  .faq dd p:last-child { margin-bottom: 0; }
+  .faq dd ul { color: var(--muted); }
+  .faq dd ul li { margin: 4px 0; }
+  .faq dd strong { color: #1a1a1a; }
   .premium-block {
     margin: 56px 0 0; padding: 28px 28px 24px; background: var(--ink); color: #f5f1e8;
     border-radius: 16px;
@@ -178,6 +183,17 @@
     color: var(--muted);
     font-size: 13px;
     margin-bottom: 16px;
+  }
+  .tier-pitch {
+    color: #2a2a2a;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0 0 18px;
+    padding: 14px 16px;
+    background: #fdfbf6;
+    border: 1px solid #ede4cc;
+    border-left: 3px solid var(--warm);
+    border-radius: 8px;
   }
   .tier-features {
     list-style: none;
@@ -274,7 +290,7 @@
     </a>
     <a href="#how-it-works" class="btn-secondary">How does it work? →</a>
   </div>
-  <p class="deploy-note">$97 one-time. Includes setup walkthrough, my 5-email testimonial-collection sequence, and 30 days of support.</p>
+  <p class="deploy-note">$97 one-time. Includes setup walkthrough and my 5-email fill-in-the-blank testimonial sequence template.</p>
 
   <div class="pricing-strip">
     <div>
@@ -426,13 +442,24 @@
 
   <dl class="faq">
     <dt>How long until I'm collecting testimonials?</dt>
-    <dd>Send the link to your customers today. Real-world response rate: 5–15% of past customers record within 48 hours of the first email. The 5-email follow-up sequence I include typically pulls 30–50% over three weeks.</dd>
+    <dd>Send the link to your customers today. Real-world response rate: 5–15% of past customers record within 48 hours of the first email. The 5-email fill-in-the-blank sequence template I include typically pulls 30–50% over three weeks.</dd>
 
     <dt>Will my non-technical customers actually use it?</dt>
     <dd>Yes. They click the link, allow camera, hit record, talk for 60 seconds, hit submit. No app downloads, no logins, no fumbling through their camera roll. Designed for grandma-level ease.</dd>
 
     <dt>How is this $97 and not $99/month like VideoAsk?</dt>
-    <dd>No SaaS company sits between you and your data. You buy the tool once, plug it into your own free Cloudflare account. Hosting costs $0 for the first ~50 testimonials, then about $1–$2/month at scale. There's no premium plan, no agency tier, no monthly bill.</dd>
+    <dd>
+      <p>The <strong>$97</strong> (or $297 for the Agency plan) is a one-time payment for the StokeReel tool itself — that's the whole transaction with us.</p>
+      <p>After you check out, you get step-by-step setup instructions for plugging StokeReel into your <strong>own Cloudflare account</strong>, which is where your videos actually live. <em>We are not Cloudflare and we have no affiliation with them</em> — you'll create your own free account directly, you own your data, and you can pull it out anytime.</p>
+      <p>Cloudflare is the same infrastructure company that <strong>Discord, Shopify, IBM, DoorDash, OpenAI, Stripe, Loom, and Zendesk</strong> run on. So your testimonials are sitting on the same network those companies use — not some no-name host.</p>
+      <p>Cloudflare's pricing is brutally cheap because they don't charge for downloads (unlike AWS). Storage is <strong>$0.015 per GB per month</strong>. A typical 60-second testimonial video is around 10 MB. So in real numbers:</p>
+      <ul style="margin: 8px 0 12px; padding-left: 22px;">
+        <li><strong>100 testimonials</strong> ≈ 1 GB ≈ <strong>$0.015/month</strong> (basically free)</li>
+        <li><strong>1,000 testimonials</strong> ≈ 10 GB ≈ <strong>$0.15/month</strong></li>
+        <li><strong>10,000 testimonials</strong> ≈ 100 GB ≈ <strong>$1.50/month</strong></li>
+      </ul>
+      <p>Compare that to VideoAsk's $99/month from day one — that's $1,188/year regardless of whether you collect 5 testimonials or 5,000. Over 5 years: $5,940 with VideoAsk vs. maybe $10–$50 total with StokeReel.</p>
+    </dd>
 
     <dt>Will I own all the testimonials?</dt>
     <dd>Every video sits in your private cloud. Download them, drop them on sales pages, run ad creative, post to social — they're yours. No platform can hold them hostage or paywall them later.</dd>
@@ -447,10 +474,7 @@
     <dd>It still works — actually better. Smaller lists have closer relationships with you, so response rates are higher, not lower. 50 happy customers can yield 15–20 great video testimonials.</dd>
 
     <dt>Can I resell this as a service to my own clients?</dt>
-    <dd>Yes — that's the play if you're a marketer or agency. Buy at $97, install for each client, charge them whatever you want for the setup plus a monthly retainer for content review. Quick math: 5 clients at $1,200/year is $6k of recurring revenue from a one-time $97 spend.</dd>
-
-    <dt>What if I need help during setup?</dt>
-    <dd>30 days of email support included. Reply to your Stripe receipt or message me directly — 24-hour response time.</dd>
+    <dd>Yes — that's the play if you're a marketer or agency. Buy at $297, install for each client, charge them whatever you want for the setup plus a monthly retainer for content review. Quick math: 5 clients at $1,200/year is $6k of recurring revenue from a one-time $297 spend.</dd>
 
     <dt>What if I'm running this for multiple clients or brands?</dt>
     <dd>Grab the Agency plan ($297). Same tool, but you can run unlimited clients/brands from one install. Each client gets their own branded recorder, their own dashboard, their own questions. Built-in switcher between clients. Resell to your clients at whatever price you want.</dd>
@@ -459,7 +483,7 @@
   <hr>
 
   <h2 style="text-align:center; margin-bottom: 8px;">Pick your plan</h2>
-  <p style="text-align:center; color: var(--muted); margin: 0 0 28px;">Both include the 5-email testimonial sequence + 30 days of email support. No monthly fees. Ever.</p>
+  <p style="text-align:center; color: var(--muted); margin: 0 0 28px;">Both include the 5-email fill-in-the-blank testimonial sequence template. No monthly fees. Ever.</p>
 
   <div class="tier-grid tier-grid-two">
     <div class="tier">
@@ -468,10 +492,9 @@
       <div class="tier-tag">one brand · one business</div>
       <ul class="tier-features">
         <li>StokeReel for one brand or business</li>
-        <li>5-email testimonial collection sequence</li>
+        <li>5-email fill-in-the-blank testimonial sequence template</li>
         <li>Custom colors, logo, questions, branding</li>
         <li>Step-by-step setup walkthrough</li>
-        <li>30 days of email support</li>
       </ul>
       <a href="https://buy.stripe.com/fZu9ATbbW0LE2wZc8GfnO00" class="tier-btn">Get StokeReel — $97</a>
     </div>
@@ -487,7 +510,6 @@
         <li>Each client gets their own branded recorder + dashboard</li>
         <li>Built-in multi-client / multi-funnel switcher</li>
         <li>Resell to your clients at any markup you want</li>
-        <li>60 days of email support</li>
       </ul>
       <a href="https://buy.stripe.com/6oU28reo82TM9ZrfkSfnO02" class="tier-btn">Get the Agency plan — $297</a>
     </div>

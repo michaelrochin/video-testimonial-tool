@@ -435,7 +435,7 @@ const DEFAULT_CONFIG = {
   signature: "",
   supportEmail: "",
   getStartedLabel: "Get started",
-  startRecordingLabel: "Start recording",
+  startRecordingLabel: "Record",
   nextQuestionLabel: "Next question →",
   doneReviewLabel: "Done — review",
   restartLabel: "Start over",
@@ -448,6 +448,9 @@ const DEFAULT_CONFIG = {
   allowVideo: true,
   allowText: true,
   maxRecordingSeconds: 300,
+  buttonStyle: "rounded",
+  recordButtonShape: "rounded",
+  recordButtonPlacement: "above-video",
   thankYouButtonLabel: "",
   thankYouButtonUrl: "",
   notifyWebhookUrl: "",
@@ -1594,23 +1597,25 @@ const CONFIG_HTML = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>StokeReel · Dashboard</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231a1a1a'/%3E%3Cpolygon points='24,16 24,48 52,32' fill='%23c9a961'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
-    background:
-      radial-gradient(1200px 800px at 100% -10%, rgba(201, 169, 97, 0.08), transparent 60%),
-      radial-gradient(900px 600px at -10% 100%, rgba(26, 26, 26, 0.04), transparent 60%),
-      #faf7f2;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-feature-settings: "cv11", "ss01", "ss03";
+    background: white;
     color: #1a1a1a;
     margin: 0;
-    padding: 24px;
+    padding: 0;
     line-height: 1.5;
     font-feature-settings: "ss01" on, "cv11" on;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  h1 { font-family: Georgia, serif; font-weight: 400; margin: 0 0 8px; letter-spacing: -0.015em; }
+  h1 { font-family: "Fraunces", Georgia, serif; font-weight: 500; margin: 0 0 8px; letter-spacing: -0.02em; }
   .sub { color: #6b6b6b; margin: 0 0 24px; font-size: 14px; }
   /* Premium polish */
   input, select, textarea, button { font-family: inherit; -webkit-font-smoothing: antialiased; }
@@ -1631,38 +1636,151 @@ const CONFIG_HTML = `<!DOCTYPE html>
   }
   .layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px;
-    gap: 28px;
-    max-width: 1240px;
-    margin: 0 auto;
+    grid-template-columns: minmax(0, 1fr) minmax(440px, 30vw);
+    gap: 0;
+    margin: 0;
     align-items: start;
   }
   @media (max-width: 1100px) {
     .layout { grid-template-columns: 1fr; }
-    .live-preview-panel { position: static !important; height: 600px !important; }
+    .rail { position: static !important; }
+    .live-preview-panel { height: 600px !important; }
   }
-  .live-preview-panel {
+  .rail {
     position: sticky;
-    top: 18px;
-    border: 1px solid #e5e0d6;
-    border-radius: 12px;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: white;
+  }
+  .rail-tip {
+    background: transparent;
+    border: 0;
+    border-top: 1px solid #f0ebe0;
+    border-radius: 0;
+    padding: 16px 20px;
+    box-shadow: none;
+  }
+  .rail-tip-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #c9a961;
+    margin-bottom: 8px;
+  }
+  .rail-tip-body {
+    margin: 0;
+    font-size: 12.5px;
+    color: #5a5550;
+    line-height: 1.55;
+  }
+  .rail-tip-body strong { color: #1a1a1a; font-weight: 600; }
+  /* Device-size tabs above the live preview — flat, no card */
+  .device-tabs {
+    display: flex;
+    gap: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 10px 16px;
+    box-shadow: none;
+    width: 100%;
+    border-bottom: 1px solid #f0ebe0;
+    justify-content: center;
+  }
+  .device-tab {
+    background: transparent !important;
+    color: #9a9385 !important;
+    border: none !important;
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    border-radius: 0 !important;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.15s;
+    box-shadow: none !important;
+  }
+  .device-tab:hover { color: #1a1a1a !important; }
+  .device-tab.active {
+    color: #1a1a1a !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .device-tab svg { flex-shrink: 0; }
+  /* Device frame wrapper — scales an iframe at native device dimensions to fit the rail */
+  .device-frame-wrap {
+    width: 100%;
+    height: 100%;
     overflow: hidden;
     background: #faf7f2;
-    height: calc(100vh - 60px);
-    max-height: 880px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px -8px rgba(0,0,0,0.08);
+    position: relative;
+  }
+  .device-frame-wrap iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 0;
+    display: block;
+    background: white;
+    transform-origin: top left;
+    will-change: transform;
+  }
+  /* Desktop — fills the rail naturally, no transform scaling.
+     Recorder is responsive, so this shows true WYSIWYG at the rail's actual width. */
+  .device-frame-wrap.device-desktop iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    transform: none !important;
+  }
+  /* Tablet — 768x1024 with device chrome */
+  .device-frame-wrap.device-tablet iframe {
+    width: 768px;
+    height: 1024px;
+    border-radius: 18px;
+    border: 10px solid #1a1a1a;
+    box-shadow: 0 12px 32px -8px rgba(0,0,0,0.25);
+  }
+  /* Mobile — 390x844 phone */
+  .device-frame-wrap.device-mobile iframe {
+    width: 390px;
+    height: 844px;
+    border-radius: 32px;
+    border: 10px solid #1a1a1a;
+    box-shadow: 0 12px 32px -8px rgba(0,0,0,0.25);
+  }
+  .live-preview-panel {
+    border: 0;
+    border-radius: 0;
+    overflow: hidden;
+    background: #faf7f2;
+    height: calc(100vh - 220px);
+    min-height: 480px;
+    box-shadow: none;
   }
   .live-preview-header {
-    padding: 10px 14px;
-    border-bottom: 1px solid #e5e0d6;
-    background: white;
-    display: flex;
+    padding: 8px 16px;
+    border: 0;
+    background: transparent;
+    display: none;
     align-items: center;
     gap: 8px;
-    font-size: 11px;
-    color: #6b6b6b;
+    font-size: 10px;
+    color: #9a9385;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     font-weight: 700;
   }
   .live-preview-header::before {
@@ -1677,11 +1795,8 @@ const CONFIG_HTML = `<!DOCTYPE html>
     100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
   }
   .live-preview-iframe {
-    width: 100%;
-    height: calc(100% - 36px);
-    border: 0;
-    display: block;
-    background: #faf7f2;
+    /* Sized via .device-frame-wrap.device-* rules above */
+    background: white;
   }
   .live-preview-empty {
     padding: 60px 24px;
@@ -1735,29 +1850,325 @@ const CONFIG_HTML = `<!DOCTYPE html>
   }
   .fp-link { font-size: 13px; text-decoration: underline; }
   .panel {
-    background: white;
-    border: 1px solid #e5e0d6;
-    border-radius: 14px;
-    padding: 32px;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 28px -12px rgba(15, 23, 42, 0.08);
+    background: transparent;
+    border: 0;
+    border-right: 1px solid #f0ebe0;
+    border-radius: 0;
+    padding: 28px 32px;
+    box-shadow: none;
   }
   .section {
-    margin-bottom: 32px;
-    padding-bottom: 32px;
-    border-bottom: 1px solid #f0ebe0;
+    margin-bottom: 28px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid #f3eee2;
   }
+  .section:first-of-type { padding-top: 0; }
   .section:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
   .section h2 {
-    font-size: 17px; font-weight: 700; margin: 0 0 14px;
+    font-size: 16px; font-weight: 700; margin: 0 0 4px;
     letter-spacing: -0.005em;
     color: #1a1a1a;
     display: flex; align-items: center; gap: 8px;
+    line-height: 1.25;
   }
+  .section > .help-text:first-of-type,
+  .section > p.help-text {
+    margin: 0 0 16px;
+    color: #6b6b6b;
+    font-size: 12.5px;
+  }
+  /* Card-style sections — premium tool feel */
+  .card-section {
+    background: white;
+    border: 1px solid #ede4cc;
+    border-radius: 14px;
+    margin-bottom: 18px;
+    overflow: hidden;
+    box-shadow: 0 1px 1px rgba(15,23,42,0.02);
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  .card-section:hover {
+    border-color: #d8d2c2;
+    box-shadow: 0 1px 1px rgba(15,23,42,0.02), 0 4px 18px -10px rgba(15,23,42,0.10);
+  }
+  .card-section-head {
+    padding: 18px 24px 14px;
+    border-bottom: 1px solid #f6f1e3;
+    background: linear-gradient(180deg, #fdfbf6 0%, #faf6ec 100%);
+  }
+  .card-section-head h2 {
+    margin: 0 0 4px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+  }
+  .card-section-desc {
+    margin: 0;
+    font-size: 12.5px;
+    color: #6b6b6b;
+    line-height: 1.5;
+  }
+  .card-section-body {
+    padding: 22px 24px 24px;
+  }
+  /* Logo row */
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .logo-preview {
+    width: 88px; height: 88px;
+    border: 1.5px dashed #e5e0d6;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: #faf7f2;
+    font-size: 11px; color: #9a9385;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .logo-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .text-link-btn {
+    background: transparent !important;
+    color: #9a9385 !important;
+    border: none !important;
+    padding: 8px 8px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    box-shadow: none !important;
+  }
+  .text-link-btn:hover { color: #b84a3a !important; }
+  /* Advanced toggle (details/summary) */
+  .advanced-toggle {
+    margin-top: 16px;
+    border-top: 1px dashed #ede4cc;
+    padding-top: 14px;
+  }
+  .advanced-toggle summary {
+    cursor: pointer;
+    font-size: 12.5px;
+    color: #6b6b6b;
+    font-weight: 500;
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+  }
+  .advanced-toggle summary::-webkit-details-marker { display: none; }
+  .advanced-toggle summary::before {
+    content: "+";
+    width: 16px; height: 16px;
+    border: 1px solid #d8d2c2;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 1;
+    color: #6b6b6b;
+    transition: transform 0.18s;
+  }
+  .advanced-toggle[open] summary::before { content: "−"; }
+  .advanced-toggle summary:hover { color: #1a1a1a; }
+  /* Templates grid */
+  .templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
+  /* Color grid — 2 columns, compact */
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 18px;
+  }
+  @media (max-width: 720px) { .color-grid { grid-template-columns: 1fr; } }
+  .color-cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .color-cell label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #5a5550;
+    letter-spacing: 0.005em;
+  }
+  .color-input-row {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid #e5e0d6;
+    border-radius: 10px;
+    background: white;
+    overflow: hidden;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .color-input-row:hover { border-color: #d8d2c2; }
+  .color-input-row:focus-within {
+    border-color: #c9a961;
+    box-shadow: 0 0 0 3px rgba(201,169,97,0.18);
+  }
+  input[type="color"].color-swatch {
+    width: 44px; height: 38px;
+    padding: 4px !important;
+    border: 0 !important;
+    border-right: 1px solid #f0ebe0 !important;
+    border-radius: 0 !important;
+    background: white !important;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: none !important;
+  }
+  input[type="color"].color-swatch::-webkit-color-swatch-wrapper { padding: 0; }
+  input[type="color"].color-swatch::-webkit-color-swatch { border: 0; border-radius: 4px; }
+  input[type="text"].color-hex {
+    flex: 1;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 8px 12px !important;
+    font-family: ui-monospace, "SF Mono", monospace !important;
+    font-size: 12.5px !important;
+    background: white !important;
+    color: #1a1a1a;
+    box-shadow: none !important;
+    min-width: 0;
+  }
+  input[type="text"].color-hex:focus { outline: none; }
+  /* Shape selector */
+  .shape-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .shape-grid.two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 720px) {
+    .shape-grid, .shape-grid.two-col { grid-template-columns: 1fr; }
+  }
+  /* Placement demo (mini-mockups for record-button placement choice) */
+  .placement-demo {
+    width: 100%; max-width: 140px;
+    background: #faf7f2;
+    border: 1px solid #ede4cc;
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: stretch;
+  }
+  .placement-line {
+    height: 4px;
+    background: #d8d2c2;
+    border-radius: 2px;
+  }
+  .placement-btn {
+    height: 14px;
+    background: linear-gradient(180deg, #dc2626, #991b1b);
+    border-radius: 4px;
+    width: 60%;
+    align-self: center;
+  }
+  .placement-video {
+    height: 28px;
+    background: #1a1a1a;
+    border-radius: 4px;
+    margin: 2px 0;
+  }
+  .shape-card {
+    background: white !important;
+    border: 1.5px solid #e5e0d6 !important;
+    border-radius: 12px !important;
+    padding: 14px 10px !important;
+    color: #5a5550 !important;
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    cursor: pointer;
+    box-shadow: none !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+  }
+  .shape-card:hover { border-color: #d8d2c2 !important; transform: translateY(-1px); }
+  .shape-card.active {
+    border-color: #1a1a1a !important;
+    background: #fafaf7 !important;
+    color: #1a1a1a !important;
+    box-shadow: 0 0 0 3px rgba(26,26,26,0.06), 0 4px 12px -4px rgba(15,23,42,0.1) !important;
+  }
+  .shape-demo {
+    width: 56px; height: 28px;
+    background: linear-gradient(180deg, #c9a961, #b89752);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .shape-demo-pill { border-radius: 999px; }
+  .shape-demo-rounded { border-radius: 8px; }
+  .shape-demo-sharp { border-radius: 2px; }
+  .shape-demo-rsquare {
+    width: 36px; height: 36px;
+    background: linear-gradient(180deg, #dc2626, #991b1b);
+    border-radius: 8px;
+    font-size: 8px;
+  }
+  .shape-demo-square {
+    width: 36px; height: 36px;
+    background: linear-gradient(180deg, #dc2626, #991b1b);
+    border-radius: 2px;
+    font-size: 8px;
+  }
+  .shape-demo-circle {
+    width: 36px; height: 36px;
+    background: linear-gradient(180deg, #dc2626, #991b1b);
+    border-radius: 50%;
+    font-size: 8px;
+  }
+  /* Inline color picker (next to button preview) */
+  .button-row {
+    display: flex; align-items: center; gap: 12px; margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .button-row .field-preview { margin-top: 0; flex: 1; min-width: 140px; }
+  .inline-color {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11.5px; color: #6b6b6b;
+    cursor: pointer;
+    user-select: none;
+    background: white;
+    border: 1px solid #e5e0d6;
+    padding: 4px 10px 4px 5px;
+    border-radius: 999px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .inline-color:hover { border-color: #d8d2c2; background: #faf7f2; }
+  .inline-color input[type="color"] {
+    width: 22px; height: 22px;
+    padding: 0 !important;
+    border: 1px solid #e5e0d6 !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    cursor: pointer;
+    box-shadow: none !important;
+  }
+  .inline-color input[type="color"]::-webkit-color-swatch-wrapper { padding: 1px; }
+  .inline-color input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 50%; }
+  .button-field { margin-bottom: 18px; }
+  .button-field:last-child { margin-bottom: 0; }
   .field { margin-bottom: 16px; }
   .field label { display: block; font-size: 13px; color: #1a1a1a; margin-bottom: 6px; font-weight: 500; }
   .field input, .field textarea, .field select {
-    width: 100%; padding: 11px 14px; border: 1px solid #e5e0d6; border-radius: 8px;
+    width: 100%; padding: 11px 14px; border: 1px solid #e5e0d6; border-radius: 10px;
     font-size: 14px; font-family: inherit; background: white; color: #1a1a1a;
+    box-shadow: inset 0 1px 1px rgba(15,23,42,0.02);
+  }
+  .field input:hover:not(:focus), .field textarea:hover:not(:focus), .field select:hover:not(:focus) {
+    border-color: #d8d2c2;
   }
   .field textarea { resize: vertical; min-height: 72px; line-height: 1.55; }
   .field-row { display: grid; grid-template-columns: 80px 1fr; gap: 12px; align-items: center; }
@@ -1802,30 +2213,161 @@ const CONFIG_HTML = `<!DOCTYPE html>
     border-color: #d8d2c2;
     box-shadow: 0 2px 6px rgba(15,23,42,0.06);
   }
-  .top-bar {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    flex-wrap: wrap; gap: 16px; margin-bottom: 24px;
-    max-width: 1240px; margin-left: auto; margin-right: auto;
-    padding: 20px 24px;
+  /* Single unified shell — fills the entire viewport, no border, no margin */
+  .app-shell {
+    width: 100%;
+    min-height: 100vh;
     background: white;
-    border: 1px solid #e5e0d6;
-    border-radius: 14px;
-    box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 6px 20px -8px rgba(15,23,42,0.06);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
   }
-  .top-bar h1 { font-size: 22px; }
-  .top-bar h1 svg { vertical-align: middle; }
-  .top-bar .sub { margin: 0; font-size: 13px; color: #6b6b6b; }
-  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .controls select {
-    padding: 9px 12px !important;
+  /* App header (inside shell — no border/bg of its own) */
+  .app-header {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+    margin: 0;
+  }
+  .brand-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid #f0ebe0;
+    gap: 20px; flex-wrap: wrap;
+  }
+  .brand-mark { display: flex; align-items: center; gap: 12px; }
+  .brand-mark svg { flex-shrink: 0; width: 26px; height: 26px; }
+  .brand-name {
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 18px; font-weight: 600; color: #1a1a1a;
+    letter-spacing: -0.015em; line-height: 1;
+  }
+  .brand-tag {
+    font-size: 11.5px; color: #9a9385; margin-top: 3px;
+    letter-spacing: 0;
+  }
+  .brand-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .ghost-btn {
+    background: transparent !important;
+    color: #6b6b6b !important;
+    border: 1px solid transparent !important;
+    padding: 7px 14px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+  }
+  .ghost-btn:hover { background: #faf7f2 !important; color: #1a1a1a !important; }
+
+  /* Workspace bar — client + funnel + save (tight, no dead space) */
+  .workspace-bar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 24px;
+    background: transparent;
+    border-bottom: 1px solid #f0ebe0;
+  }
+  .ws-group { display: inline-flex; align-items: center; gap: 8px; }
+  .ws-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #9a8550;
+    white-space: nowrap;
+  }
+  .ws-select-wrap { display: flex; gap: 6px; align-items: center; }
+  .ws-select {
+    appearance: none; -webkit-appearance: none;
+    padding: 7px 32px 7px 12px !important;
     border: 1px solid #e5e0d6 !important;
     border-radius: 8px !important;
-    background: #faf7f2 !important;
-    font-size: 13px !important;
+    background-color: white !important;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%236b6b6b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='1 1.5 6 6.5 11 1.5'/></svg>") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    font-size: 13.5px !important;
+    font-weight: 500;
+    color: #1a1a1a;
+    min-width: 200px;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-  .controls select:hover { background: white !important; border-color: #d8d2c2 !important; }
+  .ws-select:hover { border-color: #d8d2c2 !important; }
+  .ws-select:focus { outline: none; border-color: #c9a961 !important; box-shadow: 0 0 0 3px rgba(201,169,97,0.18); }
+  .ws-add {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: white !important;
+    color: #1a1a1a !important;
+    border: 1px solid #e5e0d6 !important;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    cursor: pointer;
+    box-shadow: 0 1px 1px rgba(15,23,42,0.03) !important;
+    transition: all 0.15s;
+  }
+  .ws-add:hover {
+    background: #1a1a1a !important;
+    color: white !important;
+    border-color: #1a1a1a !important;
+    transform: translateY(-1px);
+  }
+  .ws-add svg { flex-shrink: 0; }
+  .ws-divider {
+    width: 1px;
+    height: 22px;
+    background: #ede4cc;
+    align-self: center;
+  }
+  .ws-spacer { flex: 1; }
+  .ws-scope-badge {
+    font-size: 12px;
+    font-weight: 500;
+    color: #5a5550;
+    background: transparent;
+    border: 0;
+    padding: 0 4px;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1;
+  }
+  .ws-scope-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.6);
+  }
+  .ws-save {
+    align-self: center;
+    background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%) !important;
+    color: white !important;
+    border: 0 !important;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 2px rgba(0,0,0,0.1) !important;
+  }
+  .ws-save:hover {
+    background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 2px 6px rgba(0,0,0,0.15) !important;
+  }
+  .ws-delete {
+    align-self: center;
+    background: transparent !important;
+    color: #b84a3a !important;
+    border: 0 !important;
+    padding: 8px 10px !important;
+    font-size: 12.5px !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+  }
+  .ws-delete:hover { background: #fdf0ed !important; }
   .preview {
     position: sticky; top: 24px;
     border: 1px solid #e5e0d6; border-radius: 6px; overflow: hidden;
@@ -1852,14 +2394,11 @@ const CONFIG_HTML = `<!DOCTYPE html>
   .help-text { font-size: 12px; color: #6b6b6b; margin-top: 4px; }
   .tabs {
     display: flex; gap: 4px;
-    margin: 0 auto 24px;
-    max-width: 1240px;
-    padding: 6px;
-    background: white;
-    border: 1px solid #e5e0d6;
-    border-radius: 12px;
+    padding: 4px;
+    background: #faf7f2;
+    border: 1px solid #ede4cc;
+    border-radius: 999px;
     width: fit-content;
-    box-shadow: 0 1px 2px rgba(15,23,42,0.04);
   }
   .tab {
     background: transparent; border: none; padding: 9px 22px; cursor: pointer;
@@ -1878,23 +2417,42 @@ const CONFIG_HTML = `<!DOCTYPE html>
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
   .sub-tabs {
-    display: flex; gap: 2px; margin-bottom: 24px; flex-wrap: wrap;
-    background: white; border: 1px solid #e5e0d6; border-radius: 999px; padding: 4px; width: fit-content;
+    display: flex;
+    justify-content: space-between;
+    gap: 2px; margin: 0; flex-wrap: wrap;
+    background: linear-gradient(180deg, #f7f2e6 0%, #f1ebd8 100%);
+    border: 0;
+    border-top: 1px solid #ede4cc;
+    border-bottom: 1px solid #ede4cc;
+    border-radius: 0; padding: 0 24px; width: 100%;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+    overflow-x: auto;
   }
   .sub-tab {
-    background: transparent; border: none; padding: 8px 16px; cursor: pointer;
-    font-size: 13px; font-weight: 500; color: #6b6b6b; font-family: inherit;
-    border-radius: 999px; transition: background 0.15s, color 0.15s; box-shadow: none;
+    background: transparent !important; border: none !important;
+    padding: 14px 14px 13px !important; cursor: pointer;
+    font-size: 13px !important; font-weight: 500 !important;
+    color: #7a6f54 !important; font-family: inherit;
+    border-radius: 0 !important;
+    border-bottom: 2px solid transparent !important;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s; box-shadow: none !important;
   }
-  .sub-tab:hover { background: #faf7f2; color: #1a1a1a; transform: none; box-shadow: none; }
-  .sub-tab.active { background: #1a1a1a; color: white; }
-  .sub-tab.active:hover { background: #1a1a1a; color: white; }
+  .sub-tab:hover { color: #1a1a1a !important; transform: none !important; }
+  .sub-tab.active {
+    color: #1a1a1a !important;
+    border-bottom-color: #1a1a1a !important;
+    background: transparent !important;
+    font-weight: 600 !important;
+  }
+  .sub-tab.active:hover { color: #1a1a1a !important; }
   .sub-panel { display: none; }
-  .sub-panel.active { display: block; }
-  .sub-panel-hint {
-    font-size: 13px; color: #6b6b6b; margin: 0 0 16px; padding: 10px 14px;
-    background: #fdfbf6; border-left: 3px solid #c9a961; border-radius: 4px;
+  .sub-panel.active { display: block; animation: vt-fade-in 0.18s ease; }
+  @keyframes vt-fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
   }
+  .sub-panel-hint { display: none; }
   .sub-panel-actions {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
     margin-top: 36px; padding-top: 24px; border-top: 1px solid #f0ebe0;
@@ -1968,6 +2526,202 @@ const CONFIG_HTML = `<!DOCTYPE html>
     background: white !important;
     border-color: #c9a961 !important;
   }
+  /* Section eyebrow — small uppercase label above H2 */
+  .section-eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #c9a961;
+    margin-bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-eyebrow::before {
+    content: "";
+    width: 16px;
+    height: 1px;
+    background: #c9a961;
+    display: inline-block;
+  }
+  /* Email cards */
+  .email-card {
+    background: white;
+    border: 1px solid #e5e0d6;
+    border-radius: 12px;
+    padding: 18px 20px 16px;
+    margin-bottom: 14px;
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  .email-card:hover {
+    border-color: #d8d2c2;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 6px 18px -8px rgba(15,23,42,0.08);
+  }
+  .email-card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .email-day {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a8550;
+    background: linear-gradient(180deg, #fbf6e8 0%, #f5ecd2 100%);
+    border: 1px solid #ecdfb6;
+    padding: 5px 12px;
+    border-radius: 999px;
+  }
+  .email-subject-line {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    padding: 10px 14px;
+    background: #faf7f2;
+    border: 1px solid #ede8dc;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .email-body-line {
+    font-family: ui-monospace, "SF Mono", "Monaco", monospace;
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: #2a2a2a;
+    padding: 14px 16px;
+    background: #faf7f2;
+    border: 1px solid #ede8dc;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 240px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+  }
+  .email-body-line code {
+    background: rgba(201,169,97,0.16);
+    color: #8a6f30;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  .copy-btn-pro {
+    background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%) !important;
+    color: white !important;
+    border: none !important;
+    padding: 9px 16px !important;
+    border-radius: 8px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.1),
+      0 1px 2px rgba(0,0,0,0.1);
+  }
+  .copy-btn-pro:hover {
+    background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.12),
+      0 2px 8px rgba(0,0,0,0.18);
+  }
+  .copy-btn-pro.copied {
+    background: linear-gradient(180deg, #2a8552 0%, #1f6c41 100%) !important;
+  }
+  /* Reference list */
+  .reference-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background: white;
+    border: 1px solid #e5e0d6;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .reference-list li {
+    padding: 11px 18px;
+    border-bottom: 1px solid #f0ebe0;
+    font-size: 13px;
+    color: #4a4a4a;
+    line-height: 1.5;
+  }
+  .reference-list li:last-child { border-bottom: none; }
+  .reference-list strong {
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: 12px;
+    color: #8a6f30;
+    background: rgba(201,169,97,0.12);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-right: 6px;
+    font-weight: 600;
+  }
+  /* Premium polish — toggles, selects, color pickers */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px;
+    background: white;
+    border: 1px solid #e5e0d6;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: border-color 0.15s;
+  }
+  .toggle-row:hover { border-color: #d8d2c2; }
+  .toggle-row .toggle-label {
+    font-size: 13.5px;
+    color: #1a1a1a;
+    font-weight: 500;
+  }
+  .toggle-row .toggle-label small {
+    display: block;
+    font-size: 11.5px;
+    color: #9a9385;
+    font-weight: 400;
+    margin-top: 2px;
+  }
+  .toggle-switch {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .toggle-switch input {
+    opacity: 0; width: 0; height: 0; position: absolute;
+  }
+  .toggle-switch .slider {
+    position: absolute; inset: 0;
+    background: #e5e0d6;
+    border-radius: 999px;
+    transition: background 0.18s;
+  }
+  .toggle-switch .slider::before {
+    content: "";
+    position: absolute;
+    width: 18px; height: 18px;
+    left: 2px; top: 2px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.18s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .toggle-switch input:checked + .slider {
+    background: linear-gradient(180deg, #c9a961, #b89752);
+  }
+  .toggle-switch input:checked + .slider::before {
+    transform: translateX(18px);
+  }
+  /* Custom select with chevron */
+  select.premium-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%236b6b6b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='1 1.5 6 6.5 11 1.5'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px !important;
+    cursor: pointer;
+  }
   /* Wizard nav at bottom of each step */
   .wizard-nav {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
@@ -2009,16 +2763,172 @@ const CONFIG_HTML = `<!DOCTYPE html>
     color: #9a9385;
     font-weight: 500;
   }
-  .submissions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
-  .sub-card { background: white; border: 1px solid #e5e0d6; border-radius: 8px; overflow: hidden; }
-  .sub-card video { width: 100%; height: 220px; object-fit: cover; background: #000; display: block; }
-  .sub-text { padding: 16px; }
-  .sub-text .answer { background: #faf7f2; padding: 10px; border-radius: 4px; margin: 6px 0; font-size: 13px; }
-  .sub-text .answer-q { font-weight: 600; font-size: 12px; color: #6b6b6b; margin-bottom: 4px; }
-  .sub-meta { padding: 12px 16px; border-top: 1px solid #e5e0d6; font-size: 13px; }
-  .sub-meta .name { font-weight: 600; }
-  .sub-meta .email { color: #6b6b6b; }
-  .sub-meta .date { color: #6b6b6b; font-size: 12px; margin-top: 4px; }
+  /* Submissions tab — premium toolbar */
+  .subs-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid #f0ebe0;
+    background: #fdfbf6;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .subs-count-wrap { display: flex; align-items: baseline; gap: 8px; }
+  .subs-count {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+  }
+  .subs-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .subs-btn-ghost {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: transparent !important;
+    color: #5a5550 !important;
+    border: 1px solid #e5e0d6 !important;
+    padding: 7px 12px !important;
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    cursor: pointer;
+  }
+  .subs-btn-ghost:hover { background: white !important; color: #1a1a1a !important; }
+  .subs-btn-primary {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%) !important;
+    color: white !important;
+    border: 0 !important;
+    padding: 7px 14px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 2px rgba(0,0,0,0.1) !important;
+    cursor: pointer;
+  }
+  .subs-btn-primary:hover {
+    background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 2px 6px rgba(0,0,0,0.15) !important;
+  }
+  /* Submissions content area */
+  .subs-content { padding: 24px; }
+  .submissions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  /* Submission card — premium look */
+  .sub-card {
+    background: white;
+    border: 1px solid #ede4cc;
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+    display: flex;
+    flex-direction: column;
+  }
+  .sub-card:hover {
+    border-color: #d8d2c2;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -10px rgba(15,23,42,0.12);
+    transform: translateY(-2px);
+  }
+  .sub-card video {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    height: auto;
+    object-fit: cover;
+    background: #0a0a0a;
+    display: block;
+  }
+  .sub-text { padding: 14px 16px 4px; }
+  .sub-text .answer {
+    background: #faf7f2;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin: 6px 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .sub-text .answer-q {
+    font-weight: 600;
+    font-size: 11px;
+    color: #9a8550;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .sub-meta {
+    padding: 14px 16px;
+    border-top: 1px solid #f3eee2;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: #fdfbf6;
+  }
+  .sub-meta .name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+  }
+  .sub-meta .email {
+    color: #6b6b6b;
+    font-size: 12.5px;
+    font-family: ui-monospace, "SF Mono", monospace;
+  }
+  .sub-meta .date {
+    color: #9a9385;
+    font-size: 11.5px;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .sub-meta .date::before {
+    content: "";
+    width: 4px; height: 4px;
+    background: #c9a961;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  /* Feature toggle button on each submission card */
+  .feature-toggle {
+    align-self: flex-start;
+    margin-top: 10px;
+    background: white !important;
+    color: #6b6b6b !important;
+    border: 1px solid #e5e0d6 !important;
+    padding: 5px 12px !important;
+    font-size: 11.5px !important;
+    font-weight: 500 !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .feature-toggle:hover {
+    border-color: #c9a961 !important;
+    color: #1a1a1a !important;
+    background: #fdfbf6 !important;
+  }
+  .feature-toggle.is-featured {
+    background: linear-gradient(180deg, #fbf6e8, #f5ecd2) !important;
+    border-color: #ecdfb6 !important;
+    color: #8a6f30 !important;
+    font-weight: 600 !important;
+  }
+  /* Empty / loading state */
+  .sub-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 80px 24px;
+    color: #9a9385;
+    font-size: 14px;
+    border: 1.5px dashed #ede4cc;
+    border-radius: 14px;
+    background: #fdfbf6;
+  }
   .sub-badge { display: inline-block; background: #faf7f2; border: 1px solid #e5e0d6; padding: 2px 8px; border-radius: 12px; font-size: 11px; color: #6b6b6b; margin-left: 6px; }
   .sub-badge.text { background: #eef4ff; border-color: #c8d8f4; color: #2a4a8a; }
   .sub-empty { text-align: center; color: #6b6b6b; padding: 60px 20px; grid-column: 1 / -1; }
@@ -2027,47 +2937,95 @@ const CONFIG_HTML = `<!DOCTYPE html>
 <body>
 
 <div id="gate" class="gate" style="display:none;">
-  <h1>Branding</h1>
-  <p class="sub">Enter the admin password to customize the recorder.</p>
+  <h1>Sign in</h1>
+  <p class="sub">Enter your admin password to access your StokeReel dashboard.</p>
   <input type="password" id="pw" placeholder="Password" />
   <button onclick="login()">Sign in</button>
   <div id="gateErr" class="error" style="margin-top:12px; display:none;"></div>
+  <div style="margin-top: 18px; text-align: center;">
+    <a href="#" onclick="event.preventDefault(); document.getElementById('forgotModal').style.display='flex';" style="color: #6b6b6b; font-size: 13px; text-decoration: underline;">Forgot password?</a>
+  </div>
+</div>
+
+<div id="forgotModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:flex-start; justify-content:center; padding:48px 16px; overflow-y:auto;">
+  <div style="background:white; max-width:640px; width:100%; border-radius:16px; padding:32px 36px; box-shadow:0 24px 60px -12px rgba(15,23,42,0.35); position:relative; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">
+    <button onclick="document.getElementById('forgotModal').style.display='none';" style="position:absolute; top:14px; right:14px; background:transparent; border:0; color:#9a9385; font-size:22px; cursor:pointer; padding:4px 10px; border-radius:6px; box-shadow:none;">×</button>
+    <h2 style="font-family: 'Fraunces', Georgia, serif; font-size:24px; font-weight:600; margin:0 0 6px; letter-spacing:-0.015em;">Reset your password</h2>
+    <p style="margin:0 0 22px; color:#6b6b6b; font-size:14px; line-height:1.55;">We don't store your password anywhere we can recover it for you. To reset it, you'll delete the config file from your own Cloudflare R2 storage and run the setup wizard again. Takes about 2 minutes.</p>
+
+    <ol style="margin:0; padding-left:22px; line-height:1.7; font-size:14px; color:#1a1a1a;">
+      <li style="margin-bottom:10px;">Open your <a href="https://dash.cloudflare.com/?to=/:account/r2/overview" target="_blank" rel="noopener" style="color:#1a1a1a; font-weight:600;">Cloudflare R2 dashboard</a> in a new tab.</li>
+      <li style="margin-bottom:10px;">Click on your bucket (probably named <code style="background:#faf7f2; padding:2px 6px; border-radius:4px; font-size:12.5px;">testimonials</code>).</li>
+      <li style="margin-bottom:10px;">In the bucket's file list, navigate into the <code style="background:#faf7f2; padding:2px 6px; border-radius:4px; font-size:12.5px;">_system</code> folder.</li>
+      <li style="margin-bottom:10px;">You'll see a single file: <code style="background:#faf7f2; padding:2px 6px; border-radius:4px; font-size:12.5px;">setup.json</code>. Click the <strong>⋯</strong> menu next to it and choose <strong>Delete</strong>.</li>
+      <li style="margin-bottom:10px;">Confirm the deletion. <span style="color:#6b6b6b; font-size:13px;">(This only deletes your password and R2 connection settings. Your videos and form configurations stay safe.)</span></li>
+      <li style="margin-bottom:10px;">Come back here and visit your StokeReel URL with <code style="background:#faf7f2; padding:2px 6px; border-radius:4px; font-size:12.5px;">/setup</code> on the end. The wizard will run again and let you set a new password.</li>
+    </ol>
+
+    <div style="margin-top: 22px; padding: 14px 16px; background: #fef9e7; border: 1px solid #f0e6c4; border-left: 3px solid #c9a961; border-radius: 8px; font-size: 13px; line-height: 1.6;">
+      <strong>This time, type the password yourself.</strong> If your password manager (1Password, iCloud Keychain, Chrome, etc.) pops up offering to "suggest a strong password" — dismiss it. Pick a password you'll remember, then save it manually to your password manager after.
+    </div>
+
+    <div style="margin-top: 20px; display:flex; justify-content:flex-end; gap:8px;">
+      <button onclick="document.getElementById('forgotModal').style.display='none';" class="secondary">Got it</button>
+    </div>
+  </div>
 </div>
 
 <div id="app" style="display:none;">
-  <div class="top-bar">
-    <div>
-      <h1 style="display:flex; align-items:center; gap:10px;">
+  <div class="app-shell">
+  <div class="app-header">
+    <div class="brand-row">
+      <div class="brand-mark">
         <svg width="32" height="32" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <rect width="64" height="64" rx="14" fill="#1a1a1a"/>
           <polygon points="24,16 24,48 52,32" fill="#c9a961"/>
         </svg>
-        StokeReel
-      </h1>
-      <p class="sub" id="tabSub">Customize branding or watch your stoked customers — all in one place.</p>
+        <div>
+          <div class="brand-name">StokeReel</div>
+          <div class="brand-tag" id="tabSub">Configure your funnels and review submissions</div>
+        </div>
+      </div>
+      <div class="brand-actions">
+        <div class="tabs">
+          <button class="tab active" data-tab="branding" onclick="switchTab('branding')">Configure</button>
+          <button class="tab" data-tab="submissions" onclick="switchTab('submissions')">Submissions</button>
+        </div>
+        <button onclick="logout()" class="ghost-btn">Sign out</button>
+      </div>
     </div>
-    <div class="controls">
-      <select id="clientName" style="padding:8px 10px; border:1px solid #e5e0d6; border-radius:4px; min-width:180px;">
-        <option value="">— Pick a client —</option>
-      </select>
-      <select id="courseName" style="padding:8px 10px; border:1px solid #e5e0d6; border-radius:4px; min-width:200px;">
-        <option value="">Brand-wide (no funnel override)</option>
-      </select>
-      <button onclick="logout()" class="secondary">Sign out</button>
-    </div>
-  </div>
 
-  <div class="tabs">
-    <button class="tab active" data-tab="branding" onclick="switchTab('branding')">Branding</button>
-    <button class="tab" data-tab="submissions" onclick="switchTab('submissions')">Submissions</button>
+    <div class="workspace-bar" id="workspaceBar">
+      <div class="ws-group">
+        <label class="ws-label">Client</label>
+        <div class="ws-select-wrap">
+          <select id="clientName" class="ws-select"><option value="">— Pick a client —</option></select>
+          <button class="ws-add" onclick="promptNewClient()" title="Add a new client">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New client
+          </button>
+        </div>
+      </div>
+      <div class="ws-divider"></div>
+      <div class="ws-group">
+        <label class="ws-label">Funnel</label>
+        <div class="ws-select-wrap">
+          <select id="courseName" class="ws-select"><option value="">All funnels (default)</option></select>
+          <button class="ws-add" onclick="promptNewFunnel()" title="Add a new funnel override">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New funnel
+          </button>
+        </div>
+      </div>
+      <div class="ws-spacer"></div>
+      <div id="scopeBadge" class="ws-scope-badge" style="display:none;"></div>
+      <button onclick="deleteOverride()" id="deleteBtn" class="ws-delete" style="display:none;">Delete override</button>
+    </div>
   </div>
 
   <div id="tab-branding" class="tab-panel active">
-    <div style="margin-bottom:16px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
-      <button onclick="loadConfig()" class="secondary">Load</button>
-      <button onclick="save()">Save changes</button>
-      <button onclick="deleteOverride()" id="deleteBtn" class="secondary" style="display:none; color:#b84a3a; border-color:#b84a3a;">Delete override</button>
-      <div id="scopeBadge" style="display:inline-block; margin-left:auto; padding:4px 10px; border-radius:12px; font-size:12px; background:#eef4ff; color:#2a4a8a;"></div>
+    <div style="display:none;">
+      <div id="scopeBadgeLegacy"></div>
     </div>
 
 
@@ -2096,6 +3054,10 @@ const CONFIG_HTML = `<!DOCTYPE html>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       Settings
     </button>
+    <button class="sub-tab" data-subtab="emails" onclick="switchSubTab('emails')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Email templates
+    </button>
     <button class="sub-tab" data-subtab="share" onclick="switchSubTab('share')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
       Share
@@ -2106,49 +3068,97 @@ const CONFIG_HTML = `<!DOCTYPE html>
     <div class="panel">
 
       <div class="sub-panel active" data-sub="style">
-      <p class="sub-panel-hint">Set your brand identity once. Logo, colors, font — applied across every screen.</p>
-
       <div class="section">
         <h2>Logo</h2>
-        <p class="help-text" style="margin: 0 0 12px;">Shows above the headline on the intro and thank-you screens. PNG, JPG, SVG, or WebP. Max 2MB.</p>
-        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-          <div id="logoPreview" style="width:90px; height:90px; border:1px dashed #e5e0d6; border-radius:8px; display:flex; align-items:center; justify-content:center; background:#faf7f2; font-size:11px; color:#6b6b6b;">No logo</div>
-          <div>
+        <p class="help-text">Shows above the headline on intro and thank-you screens. PNG, JPG, SVG, or WebP. Max 2MB.</p>
+        <div class="logo-row">
+          <div id="logoPreview" class="logo-preview">No logo</div>
+          <div class="logo-actions">
             <input type="file" id="logoFileInput" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none;">
             <button type="button" onclick="document.getElementById('logoFileInput').click()" class="secondary">Upload logo</button>
-            <button type="button" onclick="removeLogo()" class="secondary" id="logoRemoveBtn" style="display:none; margin-left:6px; color:#b84a3a; border-color:#b84a3a;">Remove</button>
+            <button type="button" onclick="removeLogo()" class="text-link-btn" id="logoRemoveBtn" style="display:none;">Remove</button>
+            <button type="button" class="text-link-btn" onclick="toggleLogoUrl()">Use a URL instead</button>
           </div>
         </div>
-        <div class="field" style="margin-top:14px;"><label>Or paste an external logo URL</label><input type="text" data-key="logoUrl" placeholder="https://yoursite.com/logo.png"></div>
+        <div class="field" id="logoUrlField" style="display:none; margin-top:12px; margin-bottom:0;">
+          <input type="text" data-key="logoUrl" placeholder="https://yoursite.com/logo.png">
+        </div>
       </div>
 
       <div class="section">
         <h2>Quick-start templates</h2>
-        <p class="help-text" style="margin: 0 0 12px;">Apply a preset look. You can customize anything after.</p>
-        <div id="templatesGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px;"></div>
+        <p class="help-text">Apply a preset look. You can customize anything after.</p>
+        <div id="templatesGrid" class="templates-grid"></div>
       </div>
 
       <div class="section">
         <h2>Brand colors</h2>
-        <div class="field"><label>Primary (buttons, accents)</label>
-          <div class="field-row"><input type="color" data-key="brandColor"><input type="text" data-key="brandColor"></div></div>
-        <div class="field"><label>Primary hover (slightly darker)</label>
-          <div class="field-row"><input type="color" data-key="brandColorDark"><input type="text" data-key="brandColorDark"></div></div>
-        <div class="field"><label>Button text (usually white or black)</label>
-          <div class="field-row"><input type="color" data-key="buttonTextColor"><input type="text" data-key="buttonTextColor"></div></div>
-        <div class="field"><label>Background</label>
-          <div class="field-row"><input type="color" data-key="backgroundColor"><input type="text" data-key="backgroundColor"></div></div>
-        <div class="field"><label>Body text</label>
-          <div class="field-row"><input type="color" data-key="textColor"><input type="text" data-key="textColor"></div></div>
-        <div class="field"><label>Muted text (helpers, hints)</label>
-          <div class="field-row"><input type="color" data-key="mutedTextColor"><input type="text" data-key="mutedTextColor"></div></div>
-        <div class="field"><label>Borders</label>
-          <div class="field-row"><input type="color" data-key="borderColor"><input type="text" data-key="borderColor"></div></div>
-        <div class="field"><label>Record / error accent</label>
-          <div class="field-row"><input type="color" data-key="errorColor"><input type="text" data-key="errorColor"></div></div>
-        <div class="field"><label>Heading font</label>
-          <select data-key="headingFont" id="headingFontSelect"></select>
-          <p class="help-text">Google fonts auto-load on the live recorder. No setup needed.</p>
+        <p class="help-text">Click any swatch to pick a new color, or paste a hex value.</p>
+        <div class="color-grid">
+          <div class="color-cell">
+            <label>Primary</label>
+            <div class="color-input-row">
+              <input type="color" data-key="brandColor" class="color-swatch">
+              <input type="text" data-key="brandColor" class="color-hex">
+            </div>
+          </div>
+          <div class="color-cell">
+            <label>Primary hover</label>
+            <div class="color-input-row">
+              <input type="color" data-key="brandColorDark" class="color-swatch">
+              <input type="text" data-key="brandColorDark" class="color-hex">
+            </div>
+          </div>
+          <div class="color-cell">
+            <label>Button text</label>
+            <div class="color-input-row">
+              <input type="color" data-key="buttonTextColor" class="color-swatch">
+              <input type="text" data-key="buttonTextColor" class="color-hex">
+            </div>
+          </div>
+          <div class="color-cell">
+            <label>Background</label>
+            <div class="color-input-row">
+              <input type="color" data-key="backgroundColor" class="color-swatch">
+              <input type="text" data-key="backgroundColor" class="color-hex">
+            </div>
+          </div>
+          <div class="color-cell">
+            <label>Body text</label>
+            <div class="color-input-row">
+              <input type="color" data-key="textColor" class="color-swatch">
+              <input type="text" data-key="textColor" class="color-hex">
+            </div>
+          </div>
+          <div class="color-cell">
+            <label>Muted text</label>
+            <div class="color-input-row">
+              <input type="color" data-key="mutedTextColor" class="color-swatch">
+              <input type="text" data-key="mutedTextColor" class="color-hex">
+            </div>
+          </div>
+          <div class="color-cell">
+            <label>Borders</label>
+            <div class="color-input-row">
+              <input type="color" data-key="borderColor" class="color-swatch">
+              <input type="text" data-key="borderColor" class="color-hex">
+            </div>
+          </div>
+          <div class="color-cell">
+            <label>Record accent</label>
+            <div class="color-input-row">
+              <input type="color" data-key="errorColor" class="color-swatch">
+              <input type="text" data-key="errorColor" class="color-hex">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Heading font</h2>
+        <p class="help-text">Google fonts auto-load on the live recorder. No setup needed.</p>
+        <div class="field" style="margin-bottom:0;">
+          <select data-key="headingFont" id="headingFontSelect" class="premium-select"></select>
         </div>
       </div>
 
@@ -2196,29 +3206,99 @@ const CONFIG_HTML = `<!DOCTYPE html>
       </div><!-- /sub-panel thankyou -->
 
       <div class="sub-panel" data-sub="buttons">
-      <p class="sub-panel-hint">Customize what every button says during the recording flow. Each preview shows the live styled button.</p>
       <div class="section">
-        <h2>Recording flow button labels</h2>
-        <p class="help-text" style="margin: 0 0 12px;">Customize what every button says during the recording flow. Leave blank to use the default.</p>
-        <div class="field"><label>Start recording button</label><input type="text" data-key="startRecordingLabel" placeholder="Start recording"><div class="field-preview" data-preview-for="startRecordingLabel"></div></div>
-        <div class="field"><label>Next-question button</label><input type="text" data-key="nextQuestionLabel" placeholder="Next question →"><div class="field-preview" data-preview-for="nextQuestionLabel"></div></div>
-        <div class="field"><label>Done / review button (last question)</label><input type="text" data-key="doneReviewLabel" placeholder="Done — review"><div class="field-preview" data-preview-for="doneReviewLabel"></div></div>
-        <div class="field"><label>Start-over button (review screen)</label><input type="text" data-key="restartLabel" placeholder="Start over"><div class="field-preview" data-preview-for="restartLabel"></div></div>
-        <div class="field"><label>Submit button (review screen)</label><input type="text" data-key="submitLabel" placeholder="Looks good — submit"><div class="field-preview" data-preview-for="submitLabel"></div></div>
-        <div class="field"><label>Submit button (text-mode)</label><input type="text" data-key="submitTextLabel" placeholder="Submit"><div class="field-preview" data-preview-for="submitTextLabel"></div></div>
-        <div class="field">
-          <label style="display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" data-key="showTypeInsteadLink" style="margin:0;">
-            <span>"Type instead" link text</span>
+        <h2>Button corners</h2>
+        <p class="help-text">Pick the corner style for every button — Start, Next, Submit, Record, all of them.</p>
+        <div class="shape-grid two-col" data-shape-target="buttonStyle" data-mirror="recordButtonShape">
+          <button type="button" class="shape-card" data-shape-value="rounded" onclick="pickShape(this)">
+            <div class="shape-demo shape-demo-pill">Record</div>
+            <span>Curved corners</span>
+          </button>
+          <button type="button" class="shape-card" data-shape-value="sharp" onclick="pickShape(this)">
+            <div class="shape-demo shape-demo-sharp">Record</div>
+            <span>Sharp corners</span>
+          </button>
+        </div>
+        <input type="hidden" data-key="buttonStyle">
+        <input type="hidden" data-key="recordButtonShape">
+      </div>
+
+      <div class="section">
+        <h2>Record button placement</h2>
+        <p class="help-text">Where the big Record button sits on the question screen.</p>
+        <div class="shape-grid two-col" data-shape-target="recordButtonPlacement">
+          <button type="button" class="shape-card" data-shape-value="above-video" onclick="pickShape(this)">
+            <div class="placement-demo">
+              <div class="placement-line" style="width:80%;"></div>
+              <div class="placement-line" style="width:60%;"></div>
+              <div class="placement-btn"></div>
+              <div class="placement-video"></div>
+            </div>
+            <span>Above the video</span>
+          </button>
+          <button type="button" class="shape-card" data-shape-value="below-video" onclick="pickShape(this)">
+            <div class="placement-demo">
+              <div class="placement-line" style="width:80%;"></div>
+              <div class="placement-line" style="width:60%;"></div>
+              <div class="placement-video"></div>
+              <div class="placement-btn"></div>
+            </div>
+            <span>Below the video</span>
+          </button>
+        </div>
+        <input type="hidden" data-key="recordButtonPlacement">
+      </div>
+
+      <div class="section">
+        <h2>Button labels &amp; colors</h2>
+        <p class="help-text">Customize what each button says. Click the swatch to recolor it on the fly.</p>
+        <div class="field button-field"><label>Record button label</label>
+          <input type="text" data-key="startRecordingLabel" placeholder="Record">
+          <div class="button-row"><div class="field-preview" data-preview-for="startRecordingLabel"></div><label class="inline-color"><input type="color" data-key="errorColor"><span>Color</span></label></div>
+        </div>
+        <div class="field button-field"><label>Next-question button</label>
+          <input type="text" data-key="nextQuestionLabel" placeholder="Next question →">
+          <div class="button-row"><div class="field-preview" data-preview-for="nextQuestionLabel"></div><label class="inline-color"><input type="color" data-key="brandColor"><span>Color</span></label></div>
+        </div>
+        <div class="field button-field"><label>Done / review button (last question)</label>
+          <input type="text" data-key="doneReviewLabel" placeholder="Done — review">
+          <div class="button-row"><div class="field-preview" data-preview-for="doneReviewLabel"></div><label class="inline-color"><input type="color" data-key="textColor"><span>Color</span></label></div>
+        </div>
+        <div class="field button-field"><label>Start-over button (review screen)</label>
+          <input type="text" data-key="restartLabel" placeholder="Start over">
+          <div class="button-row"><div class="field-preview" data-preview-for="restartLabel"></div><label class="inline-color"><input type="color" data-key="borderColor"><span>Border</span></label></div>
+        </div>
+        <div class="field button-field"><label>Submit button (review screen)</label>
+          <input type="text" data-key="submitLabel" placeholder="Looks good — submit">
+          <div class="button-row"><div class="field-preview" data-preview-for="submitLabel"></div><label class="inline-color"><input type="color" data-key="brandColor"><span>Color</span></label></div>
+        </div>
+        <div class="field button-field"><label>Submit button (text-mode)</label>
+          <input type="text" data-key="submitTextLabel" placeholder="Submit">
+          <div class="button-row"><div class="field-preview" data-preview-for="submitTextLabel"></div><label class="inline-color"><input type="color" data-key="brandColor"><span>Color</span></label></div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">Show "Type instead" link
+            <small>Lets people type their answer if they don't want to record.</small>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" data-key="showTypeInsteadLink">
+            <span class="slider"></span>
           </label>
+        </div>
+        <div class="field"><label>"Type instead" link text</label>
           <input type="text" data-key="typeInsteadLabel" placeholder="Prefer to type instead? Click here.">
           <div class="field-preview" data-preview-for="typeInsteadLabel"></div>
         </div>
-        <div class="field">
-          <label style="display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" data-key="showSwitchToVideoLink" style="margin:0;">
-            <span>"Switch back to video" link text</span>
+        <div class="toggle-row">
+          <div class="toggle-label">Show "Switch back to video" link
+            <small>Visible only after someone has switched to text mode.</small>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" data-key="showSwitchToVideoLink">
+            <span class="slider"></span>
           </label>
+        </div>
+        <div class="field"><label>"Switch back to video" link text</label>
           <input type="text" data-key="switchToVideoLabel" placeholder="Switch to video instead">
           <div class="field-preview" data-preview-for="switchToVideoLabel"></div>
         </div>
@@ -2242,13 +3322,23 @@ const CONFIG_HTML = `<!DOCTYPE html>
       <div class="section">
         <h2>Behavior</h2>
         <div class="field"><label>Max recording length (seconds)</label><input type="number" data-key="maxRecordingSeconds" min="30" max="900"></div>
-        <div class="field" style="display:flex; align-items:flex-start; gap:10px;">
-          <input type="checkbox" data-key="allowVideo" id="allowVideoBox" style="margin-top:4px;">
-          <label for="allowVideoBox" style="margin:0;">Allow video recording<br><span class="help-text">Shows the camera-based recording flow.</span></label>
+        <div class="toggle-row">
+          <div class="toggle-label">Allow video recording
+            <small>Shows the camera-based recording flow.</small>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" data-key="allowVideo" id="allowVideoBox">
+            <span class="slider"></span>
+          </label>
         </div>
-        <div class="field" style="display:flex; align-items:flex-start; gap:10px;">
-          <input type="checkbox" data-key="allowText" id="allowTextBox" style="margin-top:4px;">
-          <label for="allowTextBox" style="margin:0;">Allow typed responses<br><span class="help-text">Shows the "Prefer to type instead" option. Uncheck to force video only.</span></label>
+        <div class="toggle-row">
+          <div class="toggle-label">Allow typed responses
+            <small>Lets people type instead. Uncheck to force video only.</small>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" data-key="allowText" id="allowTextBox">
+            <span class="slider"></span>
+          </label>
         </div>
       </div>
 
@@ -2273,6 +3363,189 @@ const CONFIG_HTML = `<!DOCTYPE html>
 
       <div class="wizard-nav"></div>
       </div><!-- /sub-panel settings -->
+
+      <div class="sub-panel" data-sub="emails">
+      <p class="sub-panel-hint">Send these to past customers to collect testimonials. Replace the <code>[BRACKETED]</code> fields with your specific program, gift, and voice.</p>
+
+      <div class="section">
+        <div class="section-eyebrow">Your recording URL</div>
+        <h2>Use this link in every email</h2>
+        <p class="help-text" style="margin: 0 0 12px;">Replace <code>[RECORDING PAGE URL]</code> in every email below with this:</p>
+        <div class="share-input-row">
+          <input id="emailsRecordingUrl" type="text" readonly placeholder="Pick a client to load your URL">
+          <button onclick="copyShare('emailsRecordingUrl', this)" class="secondary">Copy</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-eyebrow">Cadence</div>
+        <h2>5-day testimonial collection sequence</h2>
+        <p class="help-text" style="margin: 0 0 16px;">Send Email 1 immediately, then Days 3 / 6 / 10 / 14. Each email below has a Copy button.</p>
+
+        <div class="email-card">
+          <div class="email-card-head">
+            <span class="email-day">Email 1 · The Ask</span>
+          </div>
+          <div class="email-subject-line">Subject: a small favor (and something I'd like to give you)</div>
+          <div class="email-body-line">Sent this to a handful of people who went through [PROGRAM NAME] with me.
+
+I'm [OPENING IT AGAIN / LAUNCHING SOMETHING NEW / RUNNING THE NEXT ROUND] [TIMEFRAME, e.g. "next month"]. Before I do, I want to put real student stories on the page. Not testimonials. Stories. From the people who actually went through [THE PROGRAM] and came out the other side [SPECIFIC TRANSFORMATION].
+
+Yours is one I'd love to have.
+
+If you'll record a short video for me, I want to give you something in return. [DESCRIBE THE GIFT.]
+
+Yours, on me, as a thank you.
+
+I built a little page that makes recording the video easy. You click the link, it walks you through a few short questions, and you record your answer to each one right there on your phone or your computer. No app to download. No video to upload. Nothing to email me.
+
+Takes about 60 seconds.
+
+[CTA TEXT, e.g. "Record your story →"]
+[RECORDING PAGE URL]
+
+A few things, in case you're worried:
+
+You don't need to look polished. Hold your phone in front of you, prop it on a stack of books if your arm gets tired, and talk like you're [TELLING A FRIEND OVER COFFEE].
+
+You can re-record if you flub it. There's a button.
+
+People who hate being on camera do this beautifully. The thing that lands isn't polish. It's you, telling the truth.
+
+Once you've recorded, I'll send the [GIFT NAME] over within a day or two.
+
+[SIGN-OFF],
+[YOUR NAME]
+
+P.S. If you're worried your story isn't impressive enough — that's the story I want most. The quiet wins. [SPECIFIC SMALL-WIN EXAMPLE]. That's the truth other [YOUR AUDIENCE] need to hear.</div>
+          <button class="copy-btn-pro" onclick="copyEmailFromPanel(this)">Copy email</button>
+        </div>
+
+        <div class="email-card">
+          <div class="email-card-head">
+            <span class="email-day">Email 2 · The Nudge · Day 3</span>
+          </div>
+          <div class="email-subject-line">Subject: in case you missed it</div>
+          <div class="email-body-line">Quick one.
+
+Sent you something a few days ago about recording a short video for me. Sometimes my emails get buried, so I wanted to make sure it didn't slip past you.
+
+The short version: I'm putting student stories on the page for [THE NEXT THING]. If you record a quick one — three questions, prompted on your phone, takes a minute — I'll send you [GIFT NAME] as a thank you.
+
+Here's the link →
+[RECORDING PAGE URL]
+
+The page handles everything. No prep, no upload, no editing.
+
+If you'd rather not, all good. I just didn't want you to miss it.
+
+[SIGN-OFF],
+[YOUR NAME]</div>
+          <button class="copy-btn-pro" onclick="copyEmailFromPanel(this)">Copy email</button>
+        </div>
+
+        <div class="email-card">
+          <div class="email-card-head">
+            <span class="email-day">Email 3 · The Story · Day 6</span>
+          </div>
+          <div class="email-subject-line">Subject: [SHORT, INTRIGUING SUBJECT REFERENCING A STORY]</div>
+          <div class="email-body-line">[OPENING SCENE — 2-4 short paragraphs. A specific moment from your life where someone or something made you confront the exact problem your program solves. Use real names, real places, real dialogue if you have it. Short sentences. One-line paragraphs.]
+
+[THE LESSON LINE — one sentence stating what the moment taught you, written like a punch.]
+
+[CONNECT TO YOUR PROGRAM — one sentence: "That [moment] is the whole reason [PROGRAM NAME] exists."]
+
+I'm telling you this because I'm asking the people who went through [THE PROGRAM] to share their version of that moment. The thing they couldn't do before, that they can do now. [THE TRANSFORMATION.]
+
+If you have one — and I'd bet you do — would you tell me about it on camera?
+
+[CTA →]
+[RECORDING PAGE URL]
+
+The page walks you through three short prompts on your phone or computer. About a minute. And as a thank you, I'll send you [GIFT NAME].
+
+[SIGN-OFF],
+[YOUR NAME]
+
+P.S. If your moment was a small one — a tiny shift, not a transformation — that's still the story I want. The small ones are usually the most honest.</div>
+          <button class="copy-btn-pro" onclick="copyEmailFromPanel(this)">Copy email</button>
+        </div>
+
+        <div class="email-card">
+          <div class="email-card-head">
+            <span class="email-day">Email 4 · The Honest One · Day 10</span>
+          </div>
+          <div class="email-subject-line">Subject: the part that's hard to ask for</div>
+          <div class="email-body-line">I've been sitting on this email for a few days.
+
+Asking for testimonials feels strange to me. I don't love doing it. Part of me would rather just [DO YOUR WORK / OPEN THE THING / LET THE WORK SPEAK].
+
+But here's the thing.
+
+When someone is on the fence about [DOING THE PROGRAM] — [SPECIFIC STAKES] — what moves them isn't me telling them it works. It's [SOMEONE LIKE THEM], [SPECIFIC IMAGE], saying "I was where you are, and now I'm not."
+
+That's the only thing that actually moves people. I've seen it.
+
+So if you've gotten something out of [THE PROGRAM], and you have a minute, would you record a short one for me?
+
+Here's the link →
+[RECORDING PAGE URL]
+
+Three short prompts on the screen. About a minute. [GIFT NAME] is yours when you're done.
+
+And if you'd rather not — really, truly, no pressure. The fact that you were in the room is enough.
+
+[SIGN-OFF],
+[YOUR NAME]</div>
+          <button class="copy-btn-pro" onclick="copyEmailFromPanel(this)">Copy email</button>
+        </div>
+
+        <div class="email-card">
+          <div class="email-card-head">
+            <span class="email-day">Email 5 · Last Call · Day 14</span>
+          </div>
+          <div class="email-subject-line">Subject: closing the window</div>
+          <div class="email-body-line">Last note on this, then I'll stop asking.
+
+I'm [WRAPPING UP THE PAGE / FINALIZING THE LAUNCH] [SPECIFIC TIMEFRAME, e.g. "this weekend"]. After that, I'm heads-down on [THE NEXT THING] and I won't open this back up.
+
+If you've been meaning to record one and just haven't sat down to do it — this is the moment.
+
+[CTA →]
+[RECORDING PAGE URL]
+
+A minute on your phone. Three prompts. [GIFT NAME] in your inbox when you're done.
+
+If you don't get to it, I understand. Thank you for being part of [THE PROGRAM] either way. Genuinely.
+
+[SIGN-OFF],
+[YOUR NAME]
+
+P.S. If you started recording one and got self-conscious and closed the tab — happens to almost everyone. Open it back up. The first ten seconds are the hardest. After that you forget the camera is there.</div>
+          <button class="copy-btn-pro" onclick="copyEmailFromPanel(this)">Copy email</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-eyebrow">Reference</div>
+        <h2>Fields you'll fill in once</h2>
+        <p class="help-text" style="margin: 0 0 12px;">Same fields appear across the sequence. Fill them in once mentally, replace consistently.</p>
+        <ul class="reference-list">
+          <li><strong>[PROGRAM NAME]</strong> — the cohort/course/program they bought</li>
+          <li><strong>[OPENING IT AGAIN / etc.]</strong> — what you're doing next that needs the testimonials</li>
+          <li><strong>[TIMEFRAME]</strong> — when you need them by</li>
+          <li><strong>[SPECIFIC TRANSFORMATION]</strong> — the actual change your program produces, in plain language</li>
+          <li><strong>[GIFT NAME + DESCRIPTION]</strong> — what you're giving them in exchange. Real value. Don't hype it.</li>
+          <li><strong>[CTA TEXT]</strong> + <strong>[RECORDING PAGE URL]</strong> — appears in every email</li>
+          <li><strong>[SIGN-OFF]</strong> — "Hugs," / "Talk soon," / "—" / whatever fits your voice</li>
+          <li><strong>[YOUR NAME]</strong></li>
+          <li><strong>[YOUR AUDIENCE]</strong> — what you call them ("guitarists" / "founders" / "copywriters")</li>
+          <li><strong>[SMALL-WIN EXAMPLE]</strong> — the specific kind of quiet success you want stories about</li>
+        </ul>
+      </div>
+
+      <div class="wizard-nav"></div>
+      </div><!-- /sub-panel emails -->
 
       <div class="sub-panel" data-sub="share">
       <p class="sub-panel-hint">All set — here are the three ways to put StokeReel in front of your customers. Pick the one that fits your funnel.</p>
@@ -2329,25 +3602,63 @@ const CONFIG_HTML = `<!DOCTYPE html>
 
     </div><!-- /panel -->
 
-    <div class="live-preview-panel" id="livePreviewPanel">
-      <div class="live-preview-header">Live preview · updates as you type</div>
-      <iframe id="livePreviewFrame" class="live-preview-iframe" title="Live recorder preview" allow="camera; microphone"></iframe>
-      <div class="live-preview-empty" id="livePreviewEmpty" style="display:none;">Pick a client to see the live preview here.</div>
+    <div class="rail">
+      <div class="device-tabs" role="tablist">
+        <button class="device-tab active" data-device="desktop" onclick="switchDevice('desktop')" title="Desktop">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Desktop
+        </button>
+        <button class="device-tab" data-device="tablet" onclick="switchDevice('tablet')" title="Tablet">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Tablet
+        </button>
+        <button class="device-tab" data-device="mobile" onclick="switchDevice('mobile')" title="Mobile">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Mobile
+        </button>
+      </div>
+      <div class="live-preview-panel" id="livePreviewPanel">
+        <div class="live-preview-header">Live preview · updates as you type</div>
+        <div class="device-frame-wrap device-desktop" id="deviceFrameWrap">
+          <iframe id="livePreviewFrame" class="live-preview-iframe" title="Live recorder preview" allow="camera; microphone" onload="applyDeviceScale()"></iframe>
+        </div>
+        <div class="live-preview-empty" id="livePreviewEmpty" style="display:none;">Pick a client to see the live preview here.</div>
+      </div>
+      <div class="rail-tip" id="railTip">
+        <div class="rail-tip-eyebrow">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>Tip</span>
+        </div>
+        <p class="rail-tip-body" id="railTipBody">Pick a client above to start customizing. Everything you change here updates the live preview instantly — nothing is saved until you hit <strong>Save changes</strong> or <strong>Save &amp; next</strong>.</p>
+      </div>
     </div>
   </div>
-  </div>
+  </div><!-- /tab-panel branding -->
 
   <div id="tab-submissions" class="tab-panel">
-    <div style="margin-bottom:16px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
-      <span id="subsCount" class="sub" style="margin:0;"></span>
-      <select id="subsCourseFilter" style="padding:8px 10px; border:1px solid #e5e0d6; border-radius:4px;">
-        <option value="">All funnels</option>
-      </select>
-      <button onclick="exportCsv()" class="secondary" style="margin-left:auto;">Export CSV</button>
-      <button onclick="loadSubmissions()" class="secondary">Refresh</button>
+    <div class="subs-toolbar">
+      <div class="subs-count-wrap">
+        <span id="subsCount" class="subs-count">—</span>
+      </div>
+      <div class="subs-actions">
+        <select id="subsCourseFilter" class="ws-select">
+          <option value="">All funnels</option>
+        </select>
+        <button onclick="loadSubmissions()" class="subs-btn-ghost" title="Refresh">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
+        </button>
+        <button onclick="exportCsv()" class="subs-btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
     </div>
-    <div id="submissionsGrid" class="submissions-grid"></div>
+    <div class="subs-content">
+      <div id="submissionsGrid" class="submissions-grid"></div>
+    </div>
   </div>
+  </div><!-- /app-shell -->
 </div>
 
 <div id="toast" class="toast"></div>
@@ -2617,6 +3928,106 @@ function refreshLogoPreview() {
     preview.innerHTML = "No logo";
     removeBtn.style.display = "none";
   }
+}
+
+function toggleLogoUrl() {
+  const f = document.getElementById("logoUrlField");
+  if (!f) return;
+  f.style.display = f.style.display === "none" ? "block" : "none";
+  if (f.style.display === "block") {
+    const inp = f.querySelector("input");
+    if (inp) inp.focus();
+  }
+}
+
+function pickShape(btn) {
+  const grid = btn.closest(".shape-grid");
+  if (!grid) return;
+  const targetKey = grid.getAttribute("data-shape-target");
+  const mirrorKey = grid.getAttribute("data-mirror");
+  const value = btn.getAttribute("data-shape-value");
+  // Toggle active class on cards
+  grid.querySelectorAll(".shape-card").forEach(c => c.classList.toggle("active", c === btn));
+  // Sync the hidden input(s) that hold this config value, then trigger the
+  // existing input listener so refreshPreview() runs and the iframe updates.
+  const keys = mirrorKey ? [targetKey, mirrorKey] : [targetKey];
+  keys.forEach(k => {
+    const hidden = document.querySelector('input[type="hidden"][data-key="' + k + '"]');
+    if (hidden) {
+      hidden.value = value;
+      hidden.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  });
+}
+
+// Native dimensions per device (must match CSS above; values are visual size including border)
+const DEVICE_DIMS = {
+  desktop: { w: 1280, h: 800 },
+  tablet: { w: 768, h: 1024 },
+  mobile: { w: 390, h: 844 }
+};
+const DEVICE_PAD = 16; // breathing room around the device chrome inside the wrap
+let currentDevice = "desktop";
+
+function applyDeviceScale() {
+  const wrap = document.getElementById("deviceFrameWrap");
+  const iframe = document.getElementById("livePreviewFrame");
+  if (!wrap || !iframe) return;
+  // Desktop fills the rail natively — clear any leftover transform from tablet/mobile.
+  if (currentDevice === "desktop") {
+    iframe.style.transform = "";
+    return;
+  }
+  const dims = DEVICE_DIMS[currentDevice];
+  if (!dims) return;
+  const availW = wrap.clientWidth - DEVICE_PAD * 2;
+  const availH = wrap.clientHeight - DEVICE_PAD * 2;
+  if (availW <= 0 || availH <= 0) return;
+  const scale = Math.min(availW / dims.w, availH / dims.h, 1);
+  const scaledW = dims.w * scale;
+  const scaledH = dims.h * scale;
+  const offsetX = DEVICE_PAD + Math.max(0, (availW - scaledW) / 2);
+  const offsetY = DEVICE_PAD + Math.max(0, (availH - scaledH) / 2);
+  iframe.style.transform = "translate(" + offsetX + "px, " + offsetY + "px) scale(" + scale + ")";
+}
+
+function switchDevice(device) {
+  if (!DEVICE_DIMS[device]) return;
+  currentDevice = device;
+  document.querySelectorAll(".device-tab").forEach(t => {
+    t.classList.toggle("active", t.dataset.device === device);
+  });
+  const wrap = document.getElementById("deviceFrameWrap");
+  if (!wrap) return;
+  wrap.classList.remove("device-desktop", "device-tablet", "device-mobile");
+  wrap.classList.add("device-" + device);
+  // Wait for the new size CSS to apply before measuring + scaling.
+  requestAnimationFrame(() => requestAnimationFrame(applyDeviceScale));
+}
+
+window.addEventListener("resize", () => applyDeviceScale());
+// In case the rail is laid out after first paint, re-scale once on load.
+window.addEventListener("load", () => applyDeviceScale());
+// Re-scale whenever the wrap's size changes — handles login gate -> app reveal,
+// window resize, and any layout shift that would otherwise leave the iframe stuck
+// at a wrong scale (e.g. measured at 0px before the panel was visible).
+if (typeof ResizeObserver !== "undefined") {
+  const ro = new ResizeObserver(() => applyDeviceScale());
+  document.addEventListener("DOMContentLoaded", () => {
+    const wrap = document.getElementById("deviceFrameWrap");
+    if (wrap) ro.observe(wrap);
+  });
+}
+
+function syncShapeCards() {
+  document.querySelectorAll(".shape-grid").forEach(grid => {
+    const key = grid.getAttribute("data-shape-target");
+    const hidden = document.querySelector('input[type="hidden"][data-key="' + key + '"]');
+    const current = hidden ? hidden.value : "";
+    grid.querySelectorAll(".shape-card").forEach(c => {
+      c.classList.toggle("active", c.getAttribute("data-shape-value") === current);
+    });
+  });
 }
 
 async function uploadLogo(file) {
@@ -2936,18 +4347,16 @@ function populateClientSelect(clients, selected) {
   for (const c of clients) {
     opts.push('<option value="' + escapeAttr(c) + '"' + (c === wanted ? ' selected' : '') + '>' + escapeHtml(c) + '</option>');
   }
-  opts.push('<option value="' + NEW_OPTION + '">+ Add new client…</option>');
   sel.innerHTML = opts.join("");
 }
 
 function populateFunnelSelect(funnels, selected) {
   const sel = document.getElementById("courseName");
   const wanted = selected || sel.value || "";
-  const opts = ['<option value="">Brand-wide (no funnel override)</option>'];
+  const opts = ['<option value="">All funnels (default)</option>'];
   for (const f of funnels) {
     opts.push('<option value="' + escapeAttr(f) + '"' + (f === wanted ? ' selected' : '') + '>' + escapeHtml(f) + '</option>');
   }
-  opts.push('<option value="' + NEW_OPTION + '">+ Add new funnel override…</option>');
   sel.innerHTML = opts.join("");
 }
 
@@ -2971,10 +4380,51 @@ function persistSelection() {
   else localStorage.removeItem(STORAGE_COURSE);
 }
 
-function handleClientChange() {
+function promptNewClient() {
+  const sel = document.getElementById("clientName");
+  const raw = prompt("Name this client (e.g. \\"lotilabs\\" or \\"acme-co\\"):");
+  const slug = slugify(raw || "");
+  if (!slug) return;
+  const existing = sel.querySelector(\`option[value="\${slug}"]\`);
+  if (!existing) {
+    const opt = document.createElement("option");
+    opt.value = slug;
+    opt.textContent = slug;
+    const newOpt = sel.querySelector(\`option[value="\${NEW_OPTION}"]\`);
+    if (newOpt) sel.insertBefore(opt, newOpt);
+    else sel.appendChild(opt);
+  }
+  sel.value = slug;
+  handleClientChange();
+}
+
+function promptNewFunnel() {
+  const clientSel = document.getElementById("clientName");
+  if (!clientSel.value || clientSel.value === NEW_OPTION) {
+    toast("Pick a client first.");
+    return;
+  }
+  const sel = document.getElementById("courseName");
+  const raw = prompt("Name this funnel (e.g. \\"play-what-you-hear\\" or \\"black-friday-2026\\"):");
+  const slug = slugify(raw || "");
+  if (!slug) return;
+  const existing = sel.querySelector(\`option[value="\${slug}"]\`);
+  if (!existing) {
+    const opt = document.createElement("option");
+    opt.value = slug;
+    opt.textContent = slug;
+    const newOpt = sel.querySelector(\`option[value="\${NEW_OPTION}"]\`);
+    if (newOpt) sel.insertBefore(opt, newOpt);
+    else sel.appendChild(opt);
+  }
+  sel.value = slug;
+  handleFunnelChange();
+}
+
+async function handleClientChange() {
   const sel = document.getElementById("clientName");
   if (sel.value === NEW_OPTION) {
-    const raw = prompt("Enter a slug for the new client (e.g. lotilabs):");
+    const raw = prompt("Name this client (e.g. \\"lotilabs\\" or \\"acme-co\\"):");
     const slug = slugify(raw || "");
     if (!slug) {
       sel.value = "";
@@ -2989,13 +4439,14 @@ function handleClientChange() {
   }
   // When client changes, reset funnel and refresh its list
   document.getElementById("courseName").value = "";
-  refreshFunnelList(sel.value, "");
-  updateScopeBadge();
-  reloadLivePreview();
+  await refreshFunnelList(sel.value, "");
   persistSelection();
+  // Auto-load the newly selected client's saved settings into the form so
+  // the user doesn't have to refresh to see them.
+  await loadConfig();
 }
 
-function handleFunnelChange() {
+async function handleFunnelChange() {
   const sel = document.getElementById("courseName");
   if (sel.value === NEW_OPTION) {
     const raw = prompt("Enter a slug for the new funnel override (e.g. play-what-you-hear-testimonial):");
@@ -3010,9 +4461,10 @@ function handleFunnelChange() {
     sel.insertBefore(opt, sel.querySelector(\`option[value="\${NEW_OPTION}"]\`));
     sel.value = slug;
   }
-  updateScopeBadge();
-  reloadLivePreview();
   persistSelection();
+  // Auto-load the funnel's override (or fall back to brand-wide) so the form
+  // reflects what's actually saved for this funnel without needing a refresh.
+  await loadConfig();
 }
 
 async function loadConfig() {
@@ -3075,7 +4527,12 @@ function updateShareBox() {
   const courseSelected = courseRaw && courseRaw !== NEW_OPTION ? courseRaw.trim() : "";
   const course = courseSelected || "general"; // default funnel when editing brand-wide
   const box = document.getElementById("shareBox");
-  if (!client) { box.style.display = "none"; return; }
+  if (!client) {
+    box.style.display = "none";
+    const emailsInputEmpty = document.getElementById("emailsRecordingUrl");
+    if (emailsInputEmpty) emailsInputEmpty.value = "";
+    return;
+  }
   // Prefer the customer's custom domain if they set one; fall back to *.workers.dev origin
   const domainInput = document.querySelector('input[data-key="customDomain"]');
   let rawDomain = (domainInput && domainInput.value || "").trim();
@@ -3091,9 +4548,43 @@ function updateShareBox() {
     '<iframe src="' + url + '" allow="camera; microphone" style="width:100%;min-height:90vh;border:0;display:block;"></iframe>';
   document.getElementById("shareLabel").textContent =
     courseSelected ? (client + " / " + course) : (client + " / general — pick a funnel above for a specific page");
+  // Mirror this URL into the email-templates tab too
+  const emailsInput = document.getElementById("emailsRecordingUrl");
+  if (emailsInput) emailsInput.value = url;
   box.style.display = "block";
   // Auto-load (or create) the short link for this funnel
   loadShortLink();
+}
+
+async function copyEmailFromPanel(btn) {
+  const card = btn.closest(".email-card");
+  if (!card) return;
+  const subjEl = card.querySelector(".email-subject-line");
+  const bodyEl = card.querySelector(".email-body-line");
+  const subject = subjEl ? subjEl.textContent.trim() : "";
+  const body = bodyEl ? bodyEl.textContent : "";
+  // Replace [RECORDING PAGE URL] with the user's actual URL if present
+  const urlEl = document.getElementById("emailsRecordingUrl");
+  const recordingUrl = urlEl && urlEl.value ? urlEl.value : "[RECORDING PAGE URL]";
+  const filledBody = body.split("[RECORDING PAGE URL]").join(recordingUrl);
+  const text = subject + "\\n\\n" + filledBody;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+  const original = btn.textContent;
+  btn.textContent = "Copied!";
+  btn.classList.add("copied");
+  setTimeout(() => {
+    btn.textContent = original;
+    btn.classList.remove("copied");
+  }, 1500);
 }
 
 async function loadShortLink(opts) {
@@ -3153,24 +4644,25 @@ function updateScopeBadge() {
   const deleteBtn = document.getElementById("deleteBtn");
   const courseRaw = document.getElementById("courseName").value;
   const course = courseRaw && courseRaw !== NEW_OPTION ? courseRaw.trim() : "";
+  // Reset any inline styles that may have been set previously
+  badge.removeAttribute("style");
+  badge.classList.remove("scope-brand", "scope-funnel", "scope-new");
+  let dotColor, label, cls;
   if (course) {
     if (currentInherited) {
-      badge.textContent = "Editing: NEW funnel override (currently inheriting brand-wide settings)";
-      badge.style.background = "#fff7e6";
-      badge.style.color = "#8a5a00";
+      dotColor = "#d4a017"; label = "New override · " + course; cls = "scope-new";
       deleteBtn.style.display = "none";
     } else {
-      badge.textContent = "Editing: funnel override → " + course;
-      badge.style.background = "#eef4ff";
-      badge.style.color = "#2a4a8a";
+      dotColor = "#2563eb"; label = "Funnel · " + course; cls = "scope-funnel";
       deleteBtn.style.display = "inline-block";
     }
   } else {
-    badge.textContent = "Editing: brand-wide defaults";
-    badge.style.background = "#f0f4ee";
-    badge.style.color = "#3a6a3a";
+    dotColor = "#16a34a"; label = "Brand-wide"; cls = "scope-brand";
     deleteBtn.style.display = "none";
   }
+  badge.classList.add(cls);
+  badge.innerHTML =
+    '<span class="ws-scope-dot" style="background:' + dotColor + ';"></span>' + escapeHtml(label);
 }
 
 async function deleteOverride() {
@@ -3228,6 +4720,7 @@ function populateForm(config) {
   renderQuestions();
   refreshLogoPreview();
   renderCustomDomainCard();
+  syncShapeCards();
   // Render the wizard nav for whichever sub-tab is currently active
   const activeTab = document.querySelector(".sub-tab.active");
   if (activeTab) renderWizardNav(activeTab.dataset.subtab);
@@ -3561,7 +5054,7 @@ function switchTab(name) {
   if (name === "submissions") loadSubmissions();
 }
 
-const SUB_TAB_ORDER = ["style", "welcome", "questions", "thankyou", "buttons", "settings", "share"];
+const SUB_TAB_ORDER = ["style", "welcome", "questions", "thankyou", "buttons", "settings", "emails", "share"];
 const SUB_TAB_LABELS = {
   style: "Style",
   welcome: "Welcome message",
@@ -3569,6 +5062,7 @@ const SUB_TAB_LABELS = {
   thankyou: "Thank-you message",
   buttons: "Buttons",
   settings: "Settings",
+  emails: "Email templates",
   share: "Share"
 };
 
@@ -3580,6 +5074,7 @@ const SUB_TAB_TO_PREVIEW_STEP = {
   thankyou: "done",
   buttons: "question",
   settings: "intro",
+  emails: "intro",
   share: "intro"
 };
 let currentPreviewStep = "intro";
@@ -3628,14 +5123,27 @@ function renderWizardNav(activeName) {
   });
 }
 
+const RAIL_TIPS = {
+  style: "Use a quick-start template if you're in a hurry. The colors and font you set here apply across welcome, questions, and thank-you screens.",
+  welcome: "Keep it short. Two lines max. The recording starts in 30 seconds, so don't make people read for that long.",
+  questions: "3 questions is the sweet spot. Each is a separate take, so people can re-record one without redoing all of them.",
+  thankyou: "Use the gift link button to deliver the bonus you promised in your email. People expect their reward immediately after submitting.",
+  buttons: "Defaults are tested. Only change if you have a strong reason — like a different language or your brand voice is unusually casual.",
+  settings: "Most people leave these alone. The webhook is for power users sending submissions to Slack or Zapier.",
+  emails: "Send Email 1 immediately, then space the rest by Day 3, 6, 10, 14. The bracketed fields are the only parts you fill in.",
+  share: "The iframe embed is what 90% of people should use. It puts the recorder on YOUR domain — no DNS work, no cookie/cache headaches."
+};
 function switchSubTab(name) {
   document.querySelectorAll(".sub-tab").forEach(t => t.classList.toggle("active", t.dataset.subtab === name));
   document.querySelectorAll(".sub-panel").forEach(p => p.classList.toggle("active", p.dataset.sub === name));
   renderWizardNav(name);
-  // Update share box visibility / load short link when arriving at Share
-  if (name === "share") updateShareBox();
+  // Share + Emails tabs both display the recording URL — refresh on entry
+  if (name === "share" || name === "emails") updateShareBox();
   // Tell the live preview iframe which screen to show (welcome/question/thank-you)
   pushPreviewStep(SUB_TAB_TO_PREVIEW_STEP[name] || "intro");
+  // Update the contextual tip in the right rail
+  const tipBody = document.getElementById("railTipBody");
+  if (tipBody && RAIL_TIPS[name]) tipBody.textContent = RAIL_TIPS[name];
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -3758,7 +5266,7 @@ function renderSubmissions() {
     const date = new Date(item.submittedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
     const isFeatured = item.client && featuredKeysByClient[item.client] && featuredKeysByClient[item.client].has(item.key);
     const featureToggle = item.type === "video"
-      ? '<button data-feature-key="' + escapeAttr(item.key) + '" data-feature-client="' + escapeAttr(item.client || "") + '" data-feature-state="' + (isFeatured ? "1" : "0") + '" class="secondary" style="padding:4px 10px;font-size:12px;margin-top:6px;' + (isFeatured ? 'background:#fef3c7;border-color:#f59e0b;color:#78350f;' : '') + '">' + (isFeatured ? "★ Featured on intro" : "☆ Feature on intro") + '</button>'
+      ? '<button data-feature-key="' + escapeAttr(item.key) + '" data-feature-client="' + escapeAttr(item.client || "") + '" data-feature-state="' + (isFeatured ? "1" : "0") + '" class="feature-toggle' + (isFeatured ? ' is-featured' : '') + '">' + (isFeatured ? "★ Featured on intro" : "☆ Feature on intro") + '</button>'
       : '';
     const meta = '<div class="sub-meta">' +
       '<div class="name">' + escapeHtml(item.name) + (item.type === "text" ? ' <span class="sub-badge text">text</span>' : '') + '</div>' +
@@ -3910,7 +5418,7 @@ const SETUP_HTML = `<!DOCTYPE html>
   <div class="step">
     <span class="step-num">1</span>
     <h2>Pick an admin password</h2>
-    <div class="help">You'll use this to sign into the dashboard at /config.</div>
+    <div class="help">You'll use this password to sign into your dashboard. After this setup wizard finishes, you'll be sent there automatically. To come back later, visit your StokeReel URL with <code>/config</code> on the end (the same URL you're on right now, just with <code>/config</code> instead of <code>/setup</code>).</div>
     <div class="field">
       <input type="password" id="adminPassword" placeholder="Choose a strong password" autocomplete="new-password">
     </div>
@@ -3939,15 +5447,18 @@ const SETUP_HTML = `<!DOCTYPE html>
     <h2>R2 API Token</h2>
     <div class="help">
       Create one at <a href="https://dash.cloudflare.com/?to=/:account/r2/api-tokens" target="_blank">R2 → Manage R2 API Tokens → Create</a>.
-      Permission: <code>Object Read & Write</code>. After creating, copy both keys here:
+      Permission: <code>Object Read &amp; Write</code>. After creating, Cloudflare shows you both keys on the <strong>same page, one right under the other</strong> — copy them into the fields below.
     </div>
     <div class="field">
       <label>Access Key ID</label>
-      <input type="text" id="r2AccessKeyId" placeholder="e.g. 9b64b05362ee5e0711fd592d3c617e26" autocomplete="off">
+      <input type="text" id="r2AccessKeyId" placeholder="e.g. 9b64b05362ee5e0711fd592d3c617e26" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore="true" data-form-type="other">
     </div>
     <div class="field">
       <label>Secret Access Key</label>
-      <input type="password" id="r2SecretAccessKey" placeholder="64-character secret" autocomplete="off">
+      <div class="help" style="margin-bottom: 6px; padding: 10px 12px; background: #fef9e7; border: 1px solid #f0e6c4; border-left: 3px solid #c9a961; border-radius: 6px; font-size: 13px;">
+        <strong>⚠ Don't let your password manager create a password here.</strong> If 1Password / iCloud Keychain / Chrome / etc. pops up offering to "suggest a strong password," dismiss it. The Secret Access Key is the one Cloudflare gave you — paste that exact value, don't generate a new one. Look for it on the same page as your Access Key ID above.
+      </div>
+      <input type="password" id="r2SecretAccessKey" placeholder="Paste the Secret Access Key from Cloudflare" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore="true" data-form-type="other">
     </div>
   </div>
 
@@ -4118,32 +5629,169 @@ const WELCOME_HTML = `<!DOCTYPE html>
   <h1>Welcome to StokeReel.</h1>
   <p class="lead">Here's everything you just bought. The whole setup takes about 15 minutes — work through the cards in order.</p>
 
+  <h2 style="margin-top: 0;">Setup guide — about 15 minutes total</h2>
+  <p style="color: var(--muted); margin: 0 0 24px;">Work through these in order. Don't skip ahead — each step assumes the one before it is done.</p>
+
   <div class="card">
     <span class="step-num">1</span>
-    <h3>Deploy StokeReel to your Cloudflare account</h3>
-    <p>One click. Cloudflare auto-creates the worker + R2 bucket inside your own account. You own everything — videos, configs, infrastructure.</p>
+    <h3>Section 1 — Create your free Cloudflare account</h3>
+    <p>Cloudflare is the infrastructure company that hosts your videos and runs the StokeReel app. We are not Cloudflare and have no affiliation with them — you'll have your own account that you fully own.</p>
+    <ol>
+      <li>Open <a href="https://dash.cloudflare.com/sign-up" target="_blank" rel="noopener">dash.cloudflare.com/sign-up</a></li>
+      <li>Enter your email and pick a password</li>
+      <li>Verify your email when their confirmation link arrives</li>
+      <li>Skip any "add a website" prompts — you don't need to add a domain</li>
+    </ol>
+    <p style="font-size: 13px; color: var(--muted);"><strong>Cost so far:</strong> $0. No credit card required to start.</p>
+  </div>
+
+  <div class="card">
+    <span class="step-num">2</span>
+    <h3>Section 2 — Deploy StokeReel to your Cloudflare account</h3>
+    <p>One click below. Cloudflare automatically creates the Worker (the app) and R2 bucket (the video storage) inside your account.</p>
     <a href="{{DEPLOY_URL}}" class="btn" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true"><path d="M12 2L2 19h20L12 2zm0 4l7.53 13H4.47L12 6z"/></svg>
       Deploy to Cloudflare
     </a>
-    <details style="margin-top: 14px;">
-      <summary>What happens after I click Deploy</summary>
-      <ol style="margin-top: 10px;">
-        <li>Cloudflare prompts you to sign in (or create a free account)</li>
-        <li>Cloudflare authorizes GitHub access (forks the StokeReel repo into your GitHub)</li>
-        <li>Cloudflare creates a Worker + R2 bucket in your account</li>
-        <li>You get a URL like <code>https://stokereel.&lt;your-subdomain&gt;.workers.dev</code></li>
-        <li>Visit <code>&lt;your-url&gt;/config</code> → setup wizard runs → you enter R2 keys + admin password (~5 min)</li>
-        <li>Dashboard appears. You're live.</li>
-      </ol>
-    </details>
+    <ol style="margin-top: 16px;">
+      <li>Click the <strong>Deploy to Cloudflare</strong> button above</li>
+      <li>Sign in to Cloudflare if prompted (or it'll use the session from section 1)</li>
+      <li><strong>Heads up — at the top of the page, Cloudflare will show an "Upgrade now!" banner that says "testimonials uses R2 which is only available with an R2 subscription."</strong> Click <strong>Upgrade now!</strong>. You're being asked to enable R2 (the video storage), not buying a paid SaaS plan. R2 has a generous free tier and won't charge you anything until you cross it. <em>(See the cost note below.)</em></li>
+      <li>Cloudflare will ask for a credit card to enable R2. Enter it. Cloudflare requires it on file but doesn't charge it unless you exceed the free tier.</li>
+      <li><strong>After R2 is enabled, come back to this page and click the Deploy to Cloudflare button again.</strong> The deploy form will now load without the upgrade prompt blocking you.</li>
+      <li>Now fill in the deploy form:
+        <ol style="margin-top: 6px;">
+          <li><strong>Git account</strong> — connect your GitHub account (Cloudflare will prompt you to authorize). If you don't have one, create a free GitHub account at <a href="https://github.com/signup" target="_blank" rel="noopener">github.com/signup</a> first, then come back.</li>
+          <li><strong>Create private Git repository</strong> — <strong>check this box.</strong> This keeps your copy of the StokeReel code private to your GitHub account so it isn't searchable by other people on the public internet.</li>
+          <li><strong>Project name</strong> — leave it as <code>testimonials</code> (or change to whatever you want).</li>
+          <li><strong>Select R2 bucket</strong> — choose <strong>+ Create new</strong>.</li>
+          <li><strong>Name your R2 Bucket</strong> — type <code>testimonials</code> (this MUST match the project name above to avoid headaches).</li>
+          <li><strong>Location hint</strong> — pick whichever region is closest to most of your customers (e.g. North America, Europe). Not critical — it just affects upload speed slightly.</li>
+          <li><strong>Build command</strong> — leave blank.</li>
+          <li><strong>Builds for non-production branches</strong> — leave it checked (default). Harmless if you don't push code; useful if you ever update.</li>
+          <li>Any other "Optional" / "Advanced" fields — leave at their defaults.</li>
+          <li>Scroll down and click <strong>Create and deploy</strong>.</li>
+        </ol>
+      </li>
+      <li>Cloudflare provisions the Worker + R2 bucket. Takes about 60 seconds.</li>
+      <li>When it finishes, copy the URL it gives you. It'll look like <code>https://testimonials.&lt;your-subdomain&gt;.workers.dev</code></li>
+    </ol>
+    <div style="margin-top: 16px; padding: 14px 16px; background: var(--cream); border: 1px solid var(--border); border-left: 3px solid var(--warm); border-radius: 8px; font-size: 14px; line-height: 1.6;">
+      <strong>What R2 actually costs you</strong><br>
+      Cloudflare's free tier covers <strong>10 GB of storage and 1M+ requests per month</strong> — enough for roughly <strong>1,000 testimonial videos</strong> at zero dollars. Past the free tier, storage is <strong>$0.015 per GB per month</strong>. In real numbers:
+      <ul style="margin: 8px 0 0; padding-left: 20px;">
+        <li>Up to ~1,000 testimonials → <strong>$0/month</strong></li>
+        <li>~5,000 testimonials → about <strong>$0.60/month</strong></li>
+        <li>~10,000 testimonials → about <strong>$1.50/month</strong></li>
+      </ul>
+      No "subscription" in the SaaS sense — you only pay for what you actually use, and the free tier is enough for most people indefinitely.
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="step-num">3</span>
+    <h3>Section 3 — Get your R2 storage credentials</h3>
+    <p>StokeReel needs read/write access to the R2 bucket Cloudflare just created. You'll generate an API token and copy three values.</p>
+    <ol>
+      <li>In a new tab, open <a href="https://dash.cloudflare.com/?to=/:account/r2/api-tokens" target="_blank" rel="noopener">your R2 API Tokens page</a></li>
+      <li>On the page, click the blue <strong>Create Account API token</strong> button at the top right. (There's another button further down called "Create User API token" — ignore that one. You want the top one.)</li>
+      <li>Token name: <code>stokereel</code> (anything works)</li>
+      <li>Permissions: <strong>Object Read &amp; Write</strong></li>
+      <li>Specify bucket: pick the one you just created in section 2 (called <code>testimonials</code>, or whatever you named it).</li>
+      <li>Leave <strong>TTL</strong> on its default of "Forever". Leave any other optional fields (IP address filtering, etc.) at their defaults too.</li>
+      <li>Click <strong>Create Account API token</strong> at the bottom. Cloudflare shows you the token values <em>once</em> — copy them immediately into a notes app, you won't see them again.</li>
+      <li>Note down all three values:
+        <ol style="margin-top: 6px;">
+          <li><strong>Access Key ID</strong> (shown right after creation)</li>
+          <li><strong>Secret Access Key</strong> (shown right after creation)</li>
+          <li><strong>Account ID</strong> — visible in the URL bar of the Cloudflare dashboard, right after <code>dash.cloudflare.com/</code> (it's a long hex string)</li>
+        </ol>
+      </li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <span class="step-num">4</span>
+    <h3>Section 4 — Run the StokeReel setup wizard</h3>
+    <p>This connects your StokeReel app to the storage you just authorized. Takes about 2 minutes.</p>
+    <ol>
+      <li>First, find your StokeReel URL. If the deploy success screen from section 2 is still open, the URL is shown right there — copy it. If you closed it:
+        <ol style="margin-top: 6px;">
+          <li>Open <a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages" target="_blank" rel="noopener">your Workers &amp; Pages dashboard</a></li>
+          <li>You'll see your project listed. The URL underneath the project name is your StokeReel URL — looks like this:</li>
+        </ol>
+        <div style="margin: 14px 0 6px; padding: 18px 20px; background: #f6f7f9; border: 1px solid #e2e6ec; border-radius: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; color: #1a1a1a; margin-bottom: 14px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Workers &amp; Pages
+          </div>
+          <div style="background: white; border: 1px solid #e2e6ec; border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; position: relative;">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: #eef3ff; color: #2563eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 700; color: #1a1a1a; font-size: 14px;">testimonials</div>
+              <div style="position: relative; display: inline-block; margin-top: 2px;">
+                <span style="display: inline-block; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; color: #1a1a1a; background: #fffbe8; border: 1px solid #f0e6c4; padding: 3px 8px; border-radius: 6px;">testimonials.&lt;your-subdomain&gt;.workers.dev</span>
+                <div style="position: absolute; left: calc(100% + 12px); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                  <svg width="22" height="14" viewBox="0 0 22 14" fill="none" aria-hidden="true">
+                    <path d="M0 7 H17 M12 2 L17 7 L12 12" stroke="#c9a961" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; font-weight: 700; color: #8a6f30; background: #fbf6e8; border: 1px solid #ecdfb6; padding: 4px 10px; border-radius: 999px;">This whole string is your URL</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 13px; color: var(--muted); margin: 4px 0 0;">Copy that URL — you'll need it for the next step.</p>
+      </li>
+      <li>In your browser, go to that URL and add <code>/setup</code> on the end. Example: <code>https://testimonials.<em>jane-doe</em>.workers.dev/setup</code></li>
+      <li>Paste your <strong>Account ID</strong>, <strong>Access Key ID</strong>, and <strong>Secret Access Key</strong> from section 3 step 8</li>
+      <li>Set an <strong>admin password</strong> — this is what you'll use to log into your dashboard. Make it strong.</li>
+      <li>Click <strong>Save and continue</strong></li>
+      <li>The wizard verifies the connection and redirects you to your dashboard</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <span class="step-num">5</span>
+    <h3>Section 5 — Set up your first form</h3>
+    <p>Now you'll create the actual recorder page your customers will use. Everything is in your dashboard.</p>
+    <ol>
+      <li>You should already be on your dashboard at <code>https://&lt;your-url&gt;/config</code> after section 4. If not, visit it and sign in with the password you just set.</li>
+      <li>Click <strong>+ New client</strong> at the top. Type a slug like <code>my-business</code> or <code>acme</code> — this becomes the folder your testimonials live in.</li>
+      <li>Walk through the eight tabs in order, hitting <strong>Save &amp; next</strong> at the bottom of each:
+        <ol style="margin-top: 6px;">
+          <li><strong>Style</strong> — pick a quick-start template, or set logo + colors + heading font</li>
+          <li><strong>Welcome message</strong> — the headline and subheadline your visitor sees first. Keep it short (2 lines max)</li>
+          <li><strong>Questions</strong> — write 3 short prompts. Each becomes its own video take</li>
+          <li><strong>Thank-you message</strong> — what shows after they submit. Add a redirect button if you're delivering a gift</li>
+          <li><strong>Buttons</strong> — corner style (curved or sharp), record-button placement (above or below video), and button labels/colors</li>
+          <li><strong>Settings</strong> — max recording length, allow-text toggle, optional webhook for Slack/Zapier notifications</li>
+          <li><strong>Email templates</strong> — copy your fill-in-the-blank 5-email sequence here. The page auto-fills your recording URL</li>
+          <li><strong>Share</strong> — three share options: an iframe embed (recommended), a direct shareable URL, and a short link</li>
+        </ol>
+      </li>
+      <li>On the <strong>Share</strong> tab, copy the <strong>iframe embed</strong> snippet. That's what you'll paste into your website.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <span class="step-num">6</span>
+    <h3>Section 6 — Embed it on your site (or just send the link)</h3>
+    <p>Two ways to put your form in front of customers:</p>
+    <ol>
+      <li><strong>Embed it.</strong> Paste the iframe snippet from section 5 step 4 into any page on your website — GoHighLevel, WordPress, Webflow, Squarespace, Carrd, ClickFunnels, Kajabi, custom HTML. The recorder appears on your page like it was always part of it.</li>
+      <li><strong>Or send the direct link.</strong> Use the short link from the Share tab in your emails, SMS, or DMs. Customers tap it and record straight from their phone — no need for them to visit your website at all.</li>
+    </ol>
+    <p style="font-size: 13px; color: var(--muted); margin-top: 12px;"><strong>You're live.</strong> Send the first email from the template (section 7 below) and watch testimonials land in your dashboard's Submissions tab.</p>
   </div>
 
   {{TIER_BLOCK}}
 
   <div class="card">
-    <span class="step-num">2</span>
-    <h3>Your 5-day testimonial collection sequence (template)</h3>
+    <span class="step-num">7</span>
+    <h3>Section 7 — Your 5-day testimonial collection sequence (template)</h3>
     <p>Fill-in-the-blank email template. Replace anything in <code>[BRACKETS]</code> with your specific program, gift, audience, and voice. Paste each into your email tool / GHL workflow / whatever sends your email.</p>
     <p><strong>Cadence:</strong> Email 1 immediately, then Days 3 / 6 / 10 / 14.</p>
 
@@ -4282,35 +5930,21 @@ P.S. If you started recording one and got self-conscious and closed the tab — 
   </div>
 
   <div class="card">
-    <span class="step-num">3</span>
-    <h3>Fields you'll need to fill in</h3>
-    <p>Same fields appear across the sequence. Fill them in once mentally, replace consistently.</p>
+    <span class="step-num">8</span>
+    <h3>Section 8 — Fields you'll fill into the email template</h3>
+    <p>The same bracketed fields appear across the 5-email sequence. Decide each one once, replace consistently.</p>
     <ul style="font-size: 14px; line-height: 1.8; margin-top: 12px; padding-left: 20px;">
       <li><strong>[PROGRAM NAME]</strong> — the cohort/course/program they bought</li>
       <li><strong>[OPENING IT AGAIN / etc.]</strong> — what you're doing next that needs the testimonials</li>
       <li><strong>[TIMEFRAME]</strong> — when you need them by</li>
       <li><strong>[SPECIFIC TRANSFORMATION]</strong> — the actual change your program produces, in plain language</li>
       <li><strong>[GIFT NAME + DESCRIPTION]</strong> — what you're giving them in exchange. Real value. Don't hype it.</li>
-      <li><strong>[CTA TEXT]</strong> + <strong>[RECORDING PAGE URL]</strong> — appears in every email</li>
+      <li><strong>[CTA TEXT]</strong> + <strong>[RECORDING PAGE URL]</strong> — appears in every email. Pull the recording URL from the Share tab in your dashboard.</li>
       <li><strong>[SIGN-OFF]</strong> — "Hugs," / "Talk soon," / "—" / whatever fits your voice</li>
       <li><strong>[YOUR NAME]</strong></li>
       <li><strong>[YOUR AUDIENCE]</strong> — what you call them ("guitarists" / "founders" / "copywriters")</li>
       <li><strong>[SMALL-WIN EXAMPLE]</strong> — the specific kind of quiet success you want stories about</li>
     </ul>
-  </div>
-
-  <div class="card">
-    <span class="step-num">4</span>
-    <h3>Get your recording page URL from the dashboard</h3>
-    <p>After you complete the deploy in Step 1 and run the setup wizard, your dashboard shows a "Share & Embed" panel with three URL options. The <strong>Short link</strong> is best for emails — short, clean, easy to remember.</p>
-    <p>Replace <code>[RECORDING PAGE URL]</code> in each email with that short link.</p>
-  </div>
-
-  <div class="card">
-    <span class="step-num">5</span>
-    <h3>Got stuck? Email me.</h3>
-    <p>30 days of email support is included (60 days on the Agency plan). If something doesn't work or you need help, reply to your Stripe receipt or message me directly — 24-hour response time.</p>
-    <p>Bookmark this page in case you need to come back. The deploy button and emails will always live here.</p>
   </div>
 
   <hr>
