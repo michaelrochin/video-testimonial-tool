@@ -2754,9 +2754,10 @@ function updateShareBox() {
   const clientRaw = document.getElementById("clientName").value;
   const courseRaw = document.getElementById("courseName").value;
   const client = clientRaw && clientRaw !== NEW_OPTION ? clientRaw.trim() : "";
-  const course = courseRaw && courseRaw !== NEW_OPTION ? courseRaw.trim() : "";
+  const courseSelected = courseRaw && courseRaw !== NEW_OPTION ? courseRaw.trim() : "";
+  const course = courseSelected || "general"; // default funnel when editing brand-wide
   const box = document.getElementById("shareBox");
-  if (!client || !course) { box.style.display = "none"; return; }
+  if (!client) { box.style.display = "none"; return; }
   // Prefer the customer's custom domain if they set one; fall back to *.workers.dev origin
   const domainInput = document.querySelector('input[data-key="customDomain"]');
   let rawDomain = (domainInput && domainInput.value || "").trim();
@@ -2770,7 +2771,8 @@ function updateShareBox() {
   document.getElementById("shareUrl").value = url;
   document.getElementById("shareIframe").value =
     '<iframe src="' + url + '" allow="camera; microphone" style="width:100%;min-height:90vh;border:0;display:block;"></iframe>';
-  document.getElementById("shareLabel").textContent = client + " / " + course;
+  document.getElementById("shareLabel").textContent =
+    courseSelected ? (client + " / " + course) : (client + " / general — pick a funnel above for a specific page");
   box.style.display = "block";
   // Auto-load (or create) the short link for this funnel
   loadShortLink();
@@ -2782,10 +2784,11 @@ async function loadShortLink(opts) {
   const clientRaw = document.getElementById("clientName").value;
   const courseRaw = document.getElementById("courseName").value;
   const client = clientRaw && clientRaw !== NEW_OPTION ? clientRaw : "";
-  const course = courseRaw && courseRaw !== NEW_OPTION ? courseRaw : "";
+  const courseSelected = courseRaw && courseRaw !== NEW_OPTION ? courseRaw : "";
+  const course = courseSelected || "general"; // default funnel when no specific one selected
   const input = document.getElementById("shareShort");
   if (!input) return;
-  if (!client || !course) { input.value = ""; input.placeholder = "Pick a client and funnel first"; return; }
+  if (!client) { input.value = ""; input.placeholder = "Pick a client first"; return; }
   const domainInput = document.querySelector('input[data-key="customDomain"]');
   const preferredHost = (domainInput && domainInput.value || "").trim();
   input.value = "";
