@@ -393,6 +393,7 @@ ${RECORDER_HTML}
 const DEFAULT_CONFIG = {
   brandColor: "#c9a961",
   brandColorDark: "#a88840",
+  buttonTextColor: "#ffffff",
   backgroundColor: "#faf7f2",
   textColor: "#1a1a1a",
   mutedTextColor: "#6b6b6b",
@@ -519,7 +520,14 @@ async function handleConfigSave(request, env) {
   }
   const c = sanitizeSlug(client);
   const co = course ? sanitizeSlug(course) : null;
-  const merged = { ...DEFAULT_CONFIG, ...config };
+  // Merge config onto DEFAULT_CONFIG, but treat empty strings as "use default" so
+  // accidentally-cleared fields don't overwrite meaningful defaults like "Get started".
+  const merged = { ...DEFAULT_CONFIG };
+  for (const k in config) {
+    const v = config[k];
+    if (typeof v === "string" && v === "" && typeof DEFAULT_CONFIG[k] === "string" && DEFAULT_CONFIG[k] !== "") continue;
+    merged[k] = v;
+  }
   const key = co ? `config/${c}/${co}.json` : `config/${c}.json`;
   await env.BUCKET.put(key, JSON.stringify(merged, null, 2), {
     httpMetadata: { contentType: "application/json" }
@@ -1483,6 +1491,8 @@ const CONFIG_HTML = `<!DOCTYPE html>
           <div class="field-row"><input type="color" data-key="brandColor"><input type="text" data-key="brandColor"></div></div>
         <div class="field"><label>Primary hover (slightly darker)</label>
           <div class="field-row"><input type="color" data-key="brandColorDark"><input type="text" data-key="brandColorDark"></div></div>
+        <div class="field"><label>Button text (usually white or black)</label>
+          <div class="field-row"><input type="color" data-key="buttonTextColor"><input type="text" data-key="buttonTextColor"></div></div>
         <div class="field"><label>Background</label>
           <div class="field-row"><input type="color" data-key="backgroundColor"><input type="text" data-key="backgroundColor"></div></div>
         <div class="field"><label>Body text</label>
@@ -2224,7 +2234,7 @@ function readForm() {
     config[key] = val;
   });
   // Re-read colors from text inputs (color picker is paired)
-  ["brandColor","brandColorDark","backgroundColor","textColor","mutedTextColor","borderColor","errorColor"].forEach(k => {
+  ["brandColor","brandColorDark","buttonTextColor","backgroundColor","textColor","mutedTextColor","borderColor","errorColor"].forEach(k => {
     const textInputs = document.querySelectorAll(\`input[type=text][data-key="\${k}"]\`);
     if (textInputs[0]) config[k] = textInputs[0].value;
   });
@@ -2356,7 +2366,7 @@ function renderButtonPreviews(c) {
     const style = styles[key];
     if (!value || !style) { el.innerHTML = ""; return; }
     if (style.type === "pill") {
-      el.innerHTML = '<span class="fp-pill" style="background:' + escapeAttr(style.bg) + ';">' + escapeHtml(value) + '</span>';
+      el.innerHTML = '<span class="fp-pill" style="background:' + escapeAttr(style.bg) + '; color:' + escapeAttr(c.buttonTextColor || "#ffffff") + ';">' + escapeHtml(value) + '</span>';
     } else if (style.type === "secondary") {
       el.innerHTML = '<span class="fp-secondary" style="color:' + escapeAttr(style.color) + '; border:1px solid ' + escapeAttr(style.border) + ';">' + escapeHtml(value) + '</span>';
     } else if (style.type === "link") {
@@ -2390,7 +2400,7 @@ function renderWelcomePreview(c) {
     '<input class="pv-input" placeholder="Your name" disabled>' +
     '<input class="pv-input" placeholder="Email" disabled>' +
     '</div>' +
-    '<button class="pv-cta" style="background:' + escapeAttr(c.brandColor) + ';">' + escapeHtml(c.getStartedLabel || "Get started") + '</button>' +
+    '<button class="pv-cta" style="background:' + escapeAttr(c.brandColor) + '; color:' + escapeAttr(c.buttonTextColor || "#ffffff") + ';">' + escapeHtml(c.getStartedLabel || "Get started") + '</button>' +
     (showText ? '<a class="pv-toggle" style="color:' + escapeAttr(c.mutedTextColor) + ';">' + escapeHtml(c.typeInsteadLabel || "Prefer to type instead?") + '</a>' : '');
 }
 
