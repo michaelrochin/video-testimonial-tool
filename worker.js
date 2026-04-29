@@ -905,10 +905,18 @@ async function handleWelcomeAccess(request, env, url) {
   const sessionId = url.searchParams.get("session_id");
   const token = url.searchParams.get("token");
 
+  // Render-time substitution: replace {{DEPLOY_URL}} with the configured deploy URL secret.
+  // Set this via: npx wrangler secret put WELCOME_DEPLOY_URL
+  // Value: https://deploy.workers.cloudflare.com/?url=https://github.com/<your-user>/<random-repo>
+  async function buildHtml() {
+    const deployUrl = (await getCred(env, "WELCOME_DEPLOY_URL")) || "#deploy-url-not-configured";
+    return WELCOME_HTML.split("{{DEPLOY_URL}}").join(deployUrl);
+  }
+
   // Owner backdoor for testing/QA — set WELCOME_TOKEN secret to a long random string
   const welcomeToken = await getCred(env, "WELCOME_TOKEN");
   if (welcomeToken && token && token === welcomeToken) {
-    return new Response(WELCOME_HTML, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+    return new Response(await buildHtml(), { headers: { "Content-Type": "text/html; charset=utf-8" } });
   }
 
   // Stripe session verification — Stripe redirects with ?session_id={CHECKOUT_SESSION_ID}
@@ -923,10 +931,9 @@ async function handleWelcomeAccess(request, env, url) {
           const session = await stripeRes.json();
           // Accept any session that's been paid (one-time or subscription)
           if (session && (session.payment_status === "paid" || session.payment_status === "no_payment_required")) {
-            return new Response(WELCOME_HTML, {
+            return new Response(await buildHtml(), {
               headers: {
                 "Content-Type": "text/html; charset=utf-8",
-                // Don't let it be cached or shared via Referer
                 "Cache-Control": "private, no-store",
                 "Referrer-Policy": "no-referrer"
               }
@@ -3750,7 +3757,7 @@ const WELCOME_HTML = `<!DOCTYPE html>
     <span class="step-num">1</span>
     <h3>Deploy StokeReel to your Cloudflare account</h3>
     <p>One click. Cloudflare auto-creates the worker + R2 bucket inside your own account. You own everything — videos, configs, infrastructure.</p>
-    <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/michaelrochin/video-testimonial-tool" class="btn" target="_blank" rel="noopener">
+    <a href="{{DEPLOY_URL}}" class="btn" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true"><path d="M12 2L2 19h20L12 2zm0 4l7.53 13H4.47L12 6z"/></svg>
       Deploy to Cloudflare
     </a>
