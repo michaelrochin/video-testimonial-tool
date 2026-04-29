@@ -32,7 +32,7 @@ import LANDING_HTML from "./landing.html";
 // this against UPSTREAM_VERSION_URL to detect when an update is available.
 // Use semantic versioning (MAJOR.MINOR.PATCH).
 // --------------------------------------------------------------
-const STOKEREEL_VERSION = "1.4.10";
+const STOKEREEL_VERSION = "1.4.11";
 const UPSTREAM_VERSION_URL = "https://testimonials.michaelrochin.workers.dev/version";
 
 // --------------------------------------------------------------
@@ -5848,14 +5848,23 @@ function updateShareBox() {
       url + "\\n\\n" +
       "Thank you.";
   }
-  // Option 4 — one-line, zero-config iframe embed. The recorder owns its
-  // own background, sizing, and overflow, so the host page only has to
-  // provide a slot.
+  // Option 4 — one-line embed. Uses the "full bleed" trick (width:100vw +
+  // negative margin-left) so the iframe spans the entire viewport even
+  // when the host page wraps it in a constrained container with
+  // horizontal padding (Squarespace, Kajabi sections, themed WordPress).
+  // No more white margins on either side.
+  const bgInputSimple = document.querySelector('input[data-key="backgroundColor"]');
+  const bgSimple = (bgInputSimple && bgInputSimple.value && bgInputSimple.value.trim()) || "#080808";
   document.getElementById("shareIframe").value =
-    '<iframe src="' + url + '" allow="camera; microphone" style="width:100%;height:100vh;border:0;display:block;" title="Share your story"></iframe>';
+    '<iframe src="' + url + '" allow="camera; microphone" style="width:100vw;max-width:100vw;height:100vh;border:0;display:block;margin-left:calc(50% - 50vw);background:' + bgSimple + ';" title="Share your story"></iframe>';
   // Option 5 — aggressive full-page-takeover embed. Hides all other host
   // content with !important rules + a max-z-index overlay div, and uses
   // the active client's saved background color so the takeover blends in.
+  // Inline styles on the host div + iframe AND a small JS hoist so this
+  // works even when page builders (Kajabi, Squarespace blocks, themed
+  // WordPress) nest pasted code 3-4 wrappers deep — without the JS hoist,
+  // the host div was getting hidden by display:none cascading down from
+  // a wrapper-element ancestor that body > *:not(.stokereel-host) caught.
   const bgInput = document.querySelector('input[data-key="backgroundColor"]');
   const bgColor = (bgInput && bgInput.value && bgInput.value.trim()) || "#080808";
   const aggressive = '<style>\\n' +
@@ -5864,9 +5873,10 @@ function updateShareBox() {
     '  .stokereel-host { position: fixed; inset: 0; background: ' + bgColor + '; z-index: 2147483647; }\\n' +
     '  .stokereel-host iframe { width: 100%; height: 100%; border: 0; display: block; background: ' + bgColor + '; }\\n' +
     '</style>\\n' +
-    '<div class="stokereel-host">\\n' +
-    '  <iframe src="' + url + '" allow="camera; microphone" title="Share your story"></iframe>\\n' +
-    '</div>';
+    '<div class="stokereel-host" style="position:fixed;inset:0;background:' + bgColor + ';z-index:2147483647;">\\n' +
+    '  <iframe src="' + url + '" allow="camera; microphone" style="width:100%;height:100%;border:0;display:block;background:' + bgColor + ';" title="Share your story"></iframe>\\n' +
+    '</div>\\n' +
+    '<script>(function(){function h(){var e=document.querySelector(".stokereel-host");if(e&&e.parentElement!==document.body){document.body.appendChild(e);}}if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",h);}else{h();}})();<\\/script>';
   const aggressiveEl = document.getElementById("shareAggressive");
   if (aggressiveEl) aggressiveEl.value = aggressive;
   document.getElementById("shareLabel").textContent =
