@@ -32,7 +32,7 @@ import LANDING_HTML from "./landing.html";
 // this against UPSTREAM_VERSION_URL to detect when an update is available.
 // Use semantic versioning (MAJOR.MINOR.PATCH).
 // --------------------------------------------------------------
-const STOKEREEL_VERSION = "1.4.8";
+const STOKEREEL_VERSION = "1.4.9";
 const UPSTREAM_VERSION_URL = "https://testimonials.michaelrochin.workers.dev/version";
 
 // --------------------------------------------------------------
@@ -5625,8 +5625,16 @@ function populateClientSelect(clients, selected) {
   const sel = document.getElementById("clientName");
   const wanted = selected || sel.value || "";
   const opts = ['<option value="">— Pick a client —</option>'];
+  const known = new Set(clients);
   for (const c of clients) {
     opts.push('<option value="' + escapeAttr(c) + '"' + (c === wanted ? ' selected' : '') + '>' + escapeHtml(c) + '</option>');
+  }
+  // If the user just typed a brand-new client name that hasn't been saved
+  // yet, the server's client list doesn't know about it. Keep it in the
+  // dropdown so it stays selected through subsequent refreshes — it'll
+  // become a real R2 entry the moment the user hits Save.
+  if (wanted && wanted !== NEW_OPTION && !known.has(wanted)) {
+    opts.push('<option value="' + escapeAttr(wanted) + '" selected>' + escapeHtml(wanted) + ' (unsaved)</option>');
   }
   sel.innerHTML = opts.join("");
 }
@@ -5635,8 +5643,15 @@ function populateFunnelSelect(funnels, selected) {
   const sel = document.getElementById("courseName");
   const wanted = selected || sel.value || "";
   const opts = ['<option value="">All funnels (default)</option>'];
+  const known = new Set(funnels);
   for (const f of funnels) {
     opts.push('<option value="' + escapeAttr(f) + '"' + (f === wanted ? ' selected' : '') + '>' + escapeHtml(f) + '</option>');
+  }
+  // Same as above — preserve a freshly-created funnel slug that hasn't
+  // been saved to R2 yet so subsequent refreshClientList/refreshFunnelList
+  // calls don't wipe it.
+  if (wanted && wanted !== NEW_OPTION && !known.has(wanted)) {
+    opts.push('<option value="' + escapeAttr(wanted) + '" selected>' + escapeHtml(wanted) + ' (unsaved)</option>');
   }
   sel.innerHTML = opts.join("");
 }
