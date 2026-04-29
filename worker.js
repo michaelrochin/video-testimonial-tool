@@ -32,7 +32,7 @@ import LANDING_HTML from "./landing.html";
 // this against UPSTREAM_VERSION_URL to detect when an update is available.
 // Use semantic versioning (MAJOR.MINOR.PATCH).
 // --------------------------------------------------------------
-const STOKEREEL_VERSION = "1.0.0";
+const STOKEREEL_VERSION = "1.0.1";
 const UPSTREAM_VERSION_URL = "https://testimonials.michaelrochin.workers.dev/version";
 
 // --------------------------------------------------------------
@@ -4892,28 +4892,36 @@ function populateForm(config) {
   populateFontSelect();
   renderTemplates();
   populateContentPresets();
-  // Color pickers + paired text inputs share the same data-key
+  // Color pickers + paired text inputs share the same data-key.
+  // ALWAYS overwrite so switching clients clears stale values from the
+  // previously-loaded client. If the new config doesn't have a value, blank
+  // the field (the recorder applies DEFAULTS for empty strings).
   document.querySelectorAll("[data-key]").forEach(el => {
     const key = el.getAttribute("data-key");
     if (key === "questions") return;
     if (el.type === "checkbox") {
       el.checked = config[key] !== false; // default true if undefined
-    } else if (config[key] !== undefined) {
-      el.value = config[key];
+    } else {
+      el.value = config[key] !== undefined && config[key] !== null ? config[key] : "";
     }
   });
 
-  // Wire up paired color/hex inputs and live updates
-  document.querySelectorAll("[data-key]").forEach(el => {
-    el.addEventListener("input", () => {
-      const key = el.getAttribute("data-key");
-      const value = el.value;
-      document.querySelectorAll(\`[data-key="\${key}"]\`).forEach(other => {
-        if (other !== el) other.value = value;
+  // Wire up paired color/hex inputs and live updates — but only ONCE.
+  // Without this guard, switching clients re-attaches a listener every time
+  // and a single keystroke fires N stacked refreshPreview() calls.
+  if (!window.__vtInputListenersAttached) {
+    document.querySelectorAll("[data-key]").forEach(el => {
+      el.addEventListener("input", () => {
+        const key = el.getAttribute("data-key");
+        const value = el.value;
+        document.querySelectorAll(\`[data-key="\${key}"]\`).forEach(other => {
+          if (other !== el) other.value = value;
+        });
+        refreshPreview();
       });
-      refreshPreview();
     });
-  });
+    window.__vtInputListenersAttached = true;
+  }
 
   if (!currentConfig.questions || !currentConfig.questions.length) {
     currentConfig.questions = [{ text: "", helper: "" }];
