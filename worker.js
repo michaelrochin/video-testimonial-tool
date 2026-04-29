@@ -32,7 +32,7 @@ import LANDING_HTML from "./landing.html";
 // this against UPSTREAM_VERSION_URL to detect when an update is available.
 // Use semantic versioning (MAJOR.MINOR.PATCH).
 // --------------------------------------------------------------
-const STOKEREEL_VERSION = "1.4.0";
+const STOKEREEL_VERSION = "1.4.1";
 const UPSTREAM_VERSION_URL = "https://testimonials.michaelrochin.workers.dev/version";
 
 // --------------------------------------------------------------
@@ -416,15 +416,42 @@ function serveHostedRecorder(origin, client, course) {
   const safeCourse = (course || "general").toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 60) || "general";
   const inject = `<script>window.VT_HOSTED=true;window.VT_WORKER_URL=${JSON.stringify(origin)};window.VT_CLIENT=${JSON.stringify(safeClient)};window.VT_COURSE=${JSON.stringify(safeCourse)};</script>`;
   // Wrap the (HTML fragment) recorder in a complete document so it can render standalone.
+  // Body defaults to Obsidian Studio dark; the recorder's JS will override the
+  // body background to match the customer's saved backgroundColor (multi-tenant).
+  // Atmosphere stack: amber+red radial glows on body, faint film grain via ::before.
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Share your story · StokeReel</title>
+<style>
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    padding: 24px 0;
+    background-color: #080808;
+    background-image:
+      radial-gradient(1200px 800px at 0% -10%, rgba(245,166,35,0.12), transparent 55%),
+      radial-gradient(900px 600px at 100% 110%, rgba(255,45,85,0.08), transparent 60%);
+    background-attachment: fixed;
+    color: #F0EEE9;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+</style>
 ${inject}
 </head>
-<body style="margin:0;padding:24px 0;background:#faf7f2;">
+<body>
 ${RECORDER_HTML}
 </body>
 </html>`;
@@ -453,7 +480,7 @@ const DEFAULT_CONFIG = {
   errorColor: "#FF2D55",
   logoTreatment: "original",
   logoTintColor: "",
-  headingFont: '"Bebas Neue", "Syne", Georgia, serif',
+  headingFont: '"Bebas Neue", Impact, "Arial Narrow Bold", sans-serif',
   headingFontGoogleUrl: "https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap",
   headline: "Share your story",
   subheadline: 'Three quick questions in one short video. Hit record, answer them one after another, tap "Next question" as you go.',
@@ -3057,9 +3084,12 @@ const CONFIG_HTML = `<!DOCTYPE html>
   body {
     background: var(--d-bg) !important;
     color: var(--d-ink) !important;
+    /* Atmosphere stack — radial glows directly on body so they show
+       above the solid bg color. Amber top-left, soft red bottom-right. */
     background-image:
-      radial-gradient(1100px 700px at 100% -10%, rgba(212,182,115,0.08), transparent 55%),
-      radial-gradient(900px 600px at -10% 100%, rgba(212,182,115,0.04), transparent 60%) !important;
+      radial-gradient(1200px 800px at 0% -10%, rgba(245,166,35,0.14), transparent 55%),
+      radial-gradient(900px 600px at 100% 110%, rgba(255,45,85,0.08), transparent 60%) !important;
+    background-attachment: fixed !important;
   }
   .app-shell {
     background: transparent !important;
@@ -3394,24 +3424,16 @@ const CONFIG_HTML = `<!DOCTYPE html>
   /* Question block */
   .question-block { background: var(--d-bg-3) !important; }
 
-  /* === Atmosphere stack: grain + radial glow on body === */
+  /* === Atmosphere stack: grain overlay (radial glows live on body bg-image
+     above so they paint over the solid bg color, not behind it) === */
   body::before {
     content: "";
     position: fixed; inset: 0;
     pointer-events: none;
     z-index: 100;
-    opacity: 0.04;
+    opacity: 0.05;
     mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-  body::after {
-    content: "";
-    position: fixed; inset: 0;
-    pointer-events: none;
-    z-index: -1;
-    background:
-      radial-gradient(900px 600px at 0% -10%, rgba(245,166,35,0.10), transparent 55%),
-      radial-gradient(700px 500px at 100% 110%, rgba(255,45,85,0.05), transparent 60%);
   }
 
   /* === REC dot before "StokeReel" wordmark === */
@@ -4689,6 +4711,7 @@ let currentInherited = false;
 
 // Curated font palette. Google fonts include the API path needed to load them.
 const FONTS = [
+  { label: "Bebas Neue (Google, cinematic display)", css: '"Bebas Neue", Impact, "Arial Narrow Bold", sans-serif', google: "Bebas+Neue" },
   { label: "Georgia (system, classic serif)", css: 'Georgia, "Times New Roman", serif', google: "" },
   { label: "System default (sans)", css: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', google: "" },
   { label: "Helvetica (system, sans)", css: '"Helvetica Neue", Helvetica, Arial, sans-serif', google: "" },
@@ -4721,7 +4744,7 @@ const TEMPLATES = [
       brandColor: "#F5A623", brandColorDark: "#D88E11", buttonTextColor: "#1A0E00",
       backgroundColor: "#080808", textColor: "#F0EEE9", mutedTextColor: "#6B6B7A",
       borderColor: "#1F1F23", errorColor: "#FF2D55",
-      headingFont: '"Bebas Neue", "Syne", Georgia, serif',
+      headingFont: '"Bebas Neue", Impact, "Arial Narrow Bold", sans-serif',
       headingFontGoogleUrl: "https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap"
     }
   },

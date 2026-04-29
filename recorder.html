@@ -697,11 +697,21 @@
     document.head.appendChild(link);
   }
 
-  // Old default values that should be auto-upgraded to the new defaults
-  // (one-time migration: if a saved config still has the OLD default verbatim,
-  // treat it as unset so the new default kicks in).
+  // Old default values that should be auto-upgraded to the new defaults.
+  // If a saved config has values that exactly match the OLD pre-Obsidian
+  // defaults (cream / wedding-gold), treat them as unset so the new dark
+  // Obsidian defaults take over. Customers who customized colors won't
+  // match these exact values, so their choices stay intact.
   const LEGACY_DEFAULTS = {
-    startRecordingLabel: "Start recording"
+    startRecordingLabel: "Start recording",
+    backgroundColor: "#faf7f2",
+    textColor: "#1a1a1a",
+    mutedTextColor: "#6b6b6b",
+    borderColor: "#e5e0d6",
+    errorColor: "#b84a3a",
+    buttonTextColor: "#ffffff",
+    brandColor: "#c9a961",
+    brandColorDark: "#a88840"
   };
   function applyConfig(c) {
     // Merge DEFAULTS with c, but skip empty strings from c so defaults shine through.
@@ -709,7 +719,7 @@
     for (const k in (c || {})) {
       const v = c[k];
       if (typeof v === "string" && v === "") continue;
-      if (typeof v === "string" && LEGACY_DEFAULTS[k] === v) continue;
+      if (typeof v === "string" && LEGACY_DEFAULTS[k] && LEGACY_DEFAULTS[k].toLowerCase() === v.toLowerCase()) continue;
       cfg[k] = v;
     }
     QUESTIONS = cfg.questions && cfg.questions.length ? cfg.questions : DEFAULTS.questions;
@@ -727,6 +737,10 @@
       wrap.style.setProperty("--vt-muted", cfg.mutedTextColor);
       wrap.style.setProperty("--vt-border", cfg.borderColor);
       wrap.style.setProperty("--vt-error", cfg.errorColor);
+      // Sync the surrounding page body background to the customer's saved
+      // bg color so the recorder card sits on a continuous surface
+      // (multi-tenant: light-themed clients still get a light page).
+      try { if (cfg.backgroundColor) document.body.style.backgroundColor = cfg.backgroundColor; } catch {}
       // Derive an "elevated surface" color for inputs/textareas based on bg luminance
       // (light bg → white inputs; dark bg → slightly-lighter dark inputs).
       try {
