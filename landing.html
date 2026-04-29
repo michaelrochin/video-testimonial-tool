@@ -61,15 +61,56 @@
   }
   .feature h3 { color: var(--warm-dark); }
   .feature p { font-size: 14px; color: var(--muted); margin: 0; }
-  .steps { counter-reset: s; padding: 0; list-style: none; }
-  .steps li {
-    counter-increment: s; padding: 18px 22px 18px 64px; background: white; border: 1px solid var(--border);
-    border-radius: 10px; margin-bottom: 12px; position: relative;
+  .step-card {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 28px;
+    align-items: center;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
   }
-  .steps li::before {
-    content: counter(s); position: absolute; left: 22px; top: 18px;
-    width: 28px; height: 28px; border-radius: 50%; background: var(--warm); color: white;
-    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+  @media (max-width: 720px) {
+    .step-card { grid-template-columns: 1fr; gap: 16px; }
+    .step-visual { max-width: 100%; }
+  }
+  .step-card:nth-child(even) {
+    grid-template-columns: 1fr 320px;
+  }
+  @media (max-width: 720px) {
+    .step-card:nth-child(even) { grid-template-columns: 1fr; }
+    .step-card:nth-child(even) .step-visual { order: -1; }
+  }
+  .step-card .step-visual {
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .step-card .step-visual svg { display: block; width: 100%; height: auto; }
+  .step-card .step-text { }
+  .step-card .step-num {
+    display: inline-block;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--warm); color: white;
+    text-align: center; line-height: 32px;
+    font-weight: 700; font-size: 15px;
+    margin-bottom: 12px;
+  }
+  .step-card h3 {
+    font-family: Georgia, serif;
+    font-size: 24px;
+    margin: 0 0 8px;
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .step-card p {
+    color: var(--muted);
+    font-size: 16px;
+    margin: 0;
+    line-height: 1.55;
   }
   .faq dt { font-weight: 600; margin-top: 18px; }
   .faq dd { margin: 4px 0 0; color: var(--muted); }
@@ -159,16 +200,10 @@
   </div>
 
   <h2 style="margin-top: 56px;">Try it yourself — record a 30-second demo</h2>
-  <p style="color: var(--muted); margin: 0 0 20px;">Hit record. Answer the prompt. Submit. The best demos show up in the gallery below.</p>
+  <p style="color: var(--muted); margin: 0 0 20px;">Hit record. Answer the prompt. Feel exactly what your future customers will feel.</p>
 
   <div class="demo-recorder">
     <iframe src="/r/demo/landing" allow="camera; microphone" loading="lazy" title="StokeReel live demo recorder"></iframe>
-  </div>
-
-  <h3 style="margin-top: 32px; font-family: Georgia, serif; font-weight: 400; font-size: 22px;">Recent demos from visitors</h3>
-  <p style="color: var(--muted); font-size: 14px; margin: 0 0 16px;">A few people who've already tried it. Yours could be next.</p>
-  <div id="demoGallery" class="demo-gallery">
-    <p class="demo-empty" style="color: var(--muted); font-size: 14px;">Loading…</p>
   </div>
 
   <h2>Everything VideoAsk does — owned by you, free forever</h2>
@@ -208,22 +243,89 @@
     </div>
   </div>
 
-  <h2 id="how-it-works">How it works (60 seconds, three steps)</h2>
+  <h2 id="how-it-works">How it works (3 steps)</h2>
 
-  <ol class="steps">
-    <li>
-      <h3>Click "Deploy to Cloudflare" above</h3>
-      <p>Sign in to (or create) a free Cloudflare account. StokeReel auto-deploys into your account and creates an R2 bucket for you.</p>
-    </li>
-    <li>
-      <h3>Run the setup wizard</h3>
-      <p>You'll be prompted for: an admin password, your Cloudflare Account ID, and a one-time R2 API token. The wizard tells you exactly where to find each. ~4 minutes.</p>
-    </li>
-    <li>
-      <h3>Send the link, get stoked customers on tape</h3>
-      <p>Your dashboard generates a shareable URL like <code>stokereel.yourbrand.com/play-what-you-hear</code>. Send it. Watch the testimonials roll in.</p>
-    </li>
-  </ol>
+  <div class="step-card">
+    <div class="step-visual">
+      <svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="0" y="0" width="320" height="200" rx="12" fill="#faf7f2"/>
+        <rect x="20" y="20" width="280" height="32" rx="6" fill="white" stroke="#e5e0d6"/>
+        <rect x="32" y="32" width="80" height="8" rx="2" fill="#1a1a1a"/>
+        <rect x="20" y="64" width="135" height="60" rx="6" fill="white" stroke="#e5e0d6"/>
+        <rect x="32" y="76" width="50" height="6" rx="2" fill="#6b6b6b"/>
+        <circle cx="40" cy="106" r="10" fill="#c9a961"/>
+        <circle cx="64" cy="106" r="10" fill="#a88840"/>
+        <circle cx="88" cy="106" r="10" fill="#1a1a1a"/>
+        <circle cx="112" cy="106" r="10" fill="#faf7f2" stroke="#e5e0d6"/>
+        <rect x="165" y="64" width="135" height="60" rx="6" fill="white" stroke="#e5e0d6"/>
+        <rect x="177" y="76" width="50" height="6" rx="2" fill="#6b6b6b"/>
+        <rect x="177" y="92" width="100" height="8" rx="2" fill="#1a1a1a"/>
+        <rect x="177" y="106" width="80" height="6" rx="2" fill="#6b6b6b"/>
+        <rect x="20" y="136" width="280" height="44" rx="6" fill="white" stroke="#e5e0d6"/>
+        <rect x="32" y="148" width="180" height="20" rx="3" fill="#faf7f2"/>
+        <rect x="225" y="148" width="63" height="20" rx="10" fill="#c9a961"/>
+      </svg>
+    </div>
+    <div class="step-text">
+      <span class="step-num">1</span>
+      <h3>Customize</h3>
+      <p>Pick a template, swap colors, write your own questions in the dashboard. Live preview shows every change instantly. Takes 5 minutes.</p>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-visual">
+      <svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="0" y="0" width="320" height="200" rx="12" fill="#faf7f2"/>
+        <rect x="20" y="20" width="280" height="32" rx="6" fill="white" stroke="#e5e0d6"/>
+        <circle cx="38" cy="36" r="5" fill="#b84a3a"/>
+        <circle cx="54" cy="36" r="5" fill="#c9a961"/>
+        <circle cx="70" cy="36" r="5" fill="#5a8a4a"/>
+        <rect x="100" y="30" width="180" height="12" rx="6" fill="#faf7f2"/>
+        <rect x="20" y="64" width="280" height="116" rx="6" fill="white" stroke="#e5e0d6"/>
+        <rect x="36" y="80" width="248" height="8" rx="2" fill="#1a1a1a"/>
+        <rect x="36" y="96" width="200" height="6" rx="2" fill="#6b6b6b"/>
+        <rect x="36" y="116" width="248" height="48" rx="6" fill="#1a1a1a"/>
+        <text x="48" y="135" font-family="ui-monospace, monospace" font-size="9" fill="#c9a961">&lt;iframe src="recorder.</text>
+        <text x="48" y="148" font-family="ui-monospace, monospace" font-size="9" fill="#c9a961">  yoursite.com" allow=</text>
+        <text x="48" y="161" font-family="ui-monospace, monospace" font-size="9" fill="#c9a961">  "camera; microphone"&gt;</text>
+      </svg>
+    </div>
+    <div class="step-text">
+      <span class="step-num">2</span>
+      <h3>Drop it on your page</h3>
+      <p>Copy a one-line iframe and paste into any page on your site — GHL, Webflow, WordPress, Squarespace, anything. Or just send the direct URL via email.</p>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-visual">
+      <svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="0" y="0" width="320" height="200" rx="12" fill="#faf7f2"/>
+        <g>
+          <rect x="20" y="20" width="86" height="80" rx="8" fill="#1a1a1a"/>
+          <polygon points="55,48 55,72 75,60" fill="white" opacity="0.85"/>
+          <rect x="117" y="20" width="86" height="80" rx="8" fill="#1a1a1a"/>
+          <polygon points="152,48 152,72 172,60" fill="white" opacity="0.85"/>
+          <rect x="214" y="20" width="86" height="80" rx="8" fill="#1a1a1a"/>
+          <polygon points="249,48 249,72 269,60" fill="white" opacity="0.85"/>
+          <rect x="20" y="110" width="86" height="80" rx="8" fill="#1a1a1a"/>
+          <polygon points="55,138 55,162 75,150" fill="white" opacity="0.85"/>
+          <rect x="117" y="110" width="86" height="80" rx="8" fill="#1a1a1a"/>
+          <polygon points="152,138 152,162 172,150" fill="white" opacity="0.85"/>
+          <rect x="214" y="110" width="86" height="80" rx="8" fill="#1a1a1a"/>
+          <polygon points="249,138 249,162 269,150" fill="white" opacity="0.85"/>
+        </g>
+        <circle cx="290" cy="30" r="14" fill="#c9a961"/>
+        <text x="290" y="35" font-size="11" font-weight="700" fill="white" text-anchor="middle">+12</text>
+      </svg>
+    </div>
+    <div class="step-text">
+      <span class="step-num">3</span>
+      <h3>Get flooded with testimonials</h3>
+      <p>Customers click the link, record on their phone in 60 seconds. Videos land in your private dashboard. Watch them inline, mark favorites, export to your sales page.</p>
+    </div>
+  </div>
 
   <h2>FAQs</h2>
 
@@ -264,27 +366,6 @@
 <footer>
   StokeReel · stokereel.com · Self-hosted on Cloudflare
 </footer>
-
-<script>
-(async function loadDemoGallery() {
-  const gallery = document.getElementById("demoGallery");
-  if (!gallery) return;
-  try {
-    const res = await fetch("/featured?client=demo");
-    const data = await res.json();
-    const items = (data && data.items) || [];
-    if (items.length === 0) {
-      gallery.innerHTML = '<p class="demo-empty">No demos yet — be the first to record one above. Yours will appear here once it’s reviewed.</p>';
-      return;
-    }
-    gallery.innerHTML = items.slice(0, 8).map(it =>
-      '<video controls preload="metadata" playsinline src="' + it.videoUrl + '"></video>'
-    ).join("");
-  } catch (e) {
-    gallery.innerHTML = '<p class="demo-empty">Couldn’t load the demo gallery right now. Try refreshing.</p>';
-  }
-})();
-</script>
 
 </body>
 </html>
